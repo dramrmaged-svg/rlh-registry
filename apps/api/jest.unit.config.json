@@ -1,0 +1,17 @@
+{
+  "displayName": "unit",
+  "testMatch": [
+    "**/*.spec.ts",
+    "!**/*.integration.spec.ts"
+  ],
+  "transform": {
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/tsconfig.json"
+      }
+    ]
+  },
+  "testEnvironment": "node",
+  "testTimeout": 10000
+}
