@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIRT Planning Cockpit</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>SIRT Planning Cockpit</h1>
+    <p class="safety">This tool provides structured decision support only. Final treatment planning requires consultant IR, diagnostic radiology, nuclear medicine, MDT, and local governance validation.</p>
+    <div id="planningStatus" class="status">Planning readiness: Incomplete</div>
+  </header>
+
+  <main class="layout">
+    <nav>
+      <a href="#patient">Patient/MDT</a>
+      <a href="#labs">Labs</a>
+      <a href="#imaging">Imaging</a>
+      <a href="#mapping">Mapping/CBCT</a>
+      <a href="#maa">MAA/Lung Shunt</a>
+      <a href="#dosimetry">Dosimetry</a>
+      <a href="#plan">Generated Plan</a>
+      <a href="#followup">Follow-up</a>
+    </nav>
+
+    <section>
+      <form id="caseForm">
+        <div class="card" id="patient"><h2>Patient/MDT</h2><textarea name="patientSummary" placeholder="MRN, diagnosis, MDT decision, ECOG, intent"></textarea></div>
+        <div class="card" id="labs"><h2>Labs</h2>
+          <div class="grid">
+            <input type="number" step="any" name="bilirubin" placeholder="Bilirubin" />
+            <input type="number" step="any" name="albumin" placeholder="Albumin" />
+            <input type="number" step="any" name="inr" placeholder="INR" />
+            <input type="number" step="any" name="creatinine" placeholder="Creatinine" />
+            <input type="number" step="any" name="sodium" placeholder="Sodium" />
+            <input type="number" step="any" name="heightCm" placeholder="Height cm" />
+            <input type="number" step="any" name="weightKg" placeholder="Weight kg" />
+          </div>
+          <div id="calcs"></div>
+          <div id="riskFlags" class="flags"></div>
+        </div>
+        <div class="card" id="imaging"><h2>Imaging</h2><textarea name="imagingSummary"></textarea></div>
+        <div class="card" id="mapping"><h2>Mapping/CBCT</h2><textarea name="mappingSummary"></textarea></div>
+        <div class="card" id="maa"><h2>MAA/Lung Shunt</h2>
+          <div class="grid">
+            <input type="number" step="any" name="lsf" placeholder="Lung shunt fraction %" />
+            <input type="text" name="maaConcordance" placeholder="MAA concordance" />
+            <input type="text" name="extrahepaticUptake" placeholder="Extrahepatic uptake" />
+          </div>
+        </div>
+        <div class="card" id="dosimetry"><h2>Dosimetry</h2>
+          <div class="grid">
+            <input type="text" name="product" placeholder="Product" />
+            <input type="number" step="any" name="desiredDoseGy" placeholder="Desired dose Gy" />
+            <input type="number" step="any" name="perfusedVolumeMl" placeholder="Perfused volume mL" />
+          </div>
+          <div id="dosimetryOutput"></div>
+        </div>
+        <div class="card" id="followup"><h2>Follow-up</h2><textarea name="followup"></textarea></div>
+      </form>
+
+      <div class="toolbar">
+        <button id="saveBtn" type="button">Save case</button>
+        <button id="loadBtn" type="button">Load case</button>
+        <button id="exportBtn" type="button">Export JSON</button>
+        <input id="importInput" type="file" accept="application/json" />
+        <button id="printBtn" type="button">Print / Save PDF</button>
+      </div>
+
+      <section class="card" id="plan">
+        <h2>Generated Plan</h2>
+        <button id="generateBtn" type="button">Generate report</button>
+        <pre id="report"></pre>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
