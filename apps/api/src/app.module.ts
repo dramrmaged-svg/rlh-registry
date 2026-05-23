@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { PatientsModule } from './patients/patients.module';
 import { MdtModule } from './mdt/mdt.module';
 import { AuditModule } from './audit/audit.module';
+import { ChestXrayAiModule } from './chest-xray-ai/chest-xray-ai.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 
@@ -20,6 +21,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     UsersModule,
     PatientsModule,
     MdtModule,
+    ChestXrayAiModule,
     AuditModule,
   ],
   providers: [
