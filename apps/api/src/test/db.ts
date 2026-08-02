@@ -13,10 +13,13 @@ export function createTestClient(): PrismaClient {
 }
 
 const TABLES = [
-  'audit_logs', 'refresh_tokens', 'mdt_records', 'clinical_snapshots',
-  'clinical_scores', 'lab_panels', 'patient_identifiers', 'diagnoses',
-  'follow_ups', 'procedures', 'treatment_courses', 'imaging_studies',
-  'mdt_sessions', 'patients', 'users',
+  'audit_logs', 'refresh_tokens', 'calculation_audits', 'toxicity_events',
+  'follow_ups', 'lesion_dose_injections', 'lesion_feeders', 'lesions',
+  'treatment_sessions', 'dosimetry_plans', 'maa_studies', 'mapping_sessions',
+  'episode_outcomes', 'imaging_studies', 'clinical_snapshots',
+  'clinical_scores', 'lab_panels', 'diagnoses', 'mdt_records', 'episodes',
+  'mdt_sessions', 'vocabulary_options', 'vocabularies', 'patient_identifiers',
+  'patients', 'users',
 ].join('", "');
 
 export async function truncateAll(client: PrismaClient): Promise<void> {

@@ -15,14 +15,14 @@ class UnlockBodyDto { @IsString() reason!: string; }
 export class MdtController {
   constructor(private readonly mdtService: MdtService) {}
 
-  @Get('patients/:patientId/mdt-records')
-  listForPatient(@Param('patientId', ParseUUIDPipe) patientId: string, @CurrentUser() currentUser: UserResponseDto) {
-    return this.mdtService.listForPatient(patientId, currentUser.role);
+  @Get('episodes/:episodeId/mdt-records')
+  listForEpisode(@Param('episodeId', ParseUUIDPipe) episodeId: string, @CurrentUser() currentUser: UserResponseDto) {
+    return this.mdtService.listForEpisode(episodeId, currentUser.role);
   }
 
-  @Post('patients/:patientId/mdt-records') @Roles(Role.ADMIN, Role.CONSULTANT_IR, Role.FELLOW, Role.CNS_COORDINATOR)
-  create(@Param('patientId', ParseUUIDPipe) patientId: string, @Body() dto: CreateMdtRecordDto, @CurrentUser() currentUser: UserResponseDto, @Req() request: Request) {
-    return this.mdtService.create(patientId, dto, currentUser, request);
+  @Post('episodes/:episodeId/mdt-records') @Roles(Role.ADMIN, Role.CONSULTANT_IR, Role.FELLOW, Role.CNS_COORDINATOR)
+  create(@Param('episodeId', ParseUUIDPipe) episodeId: string, @Body() dto: CreateMdtRecordDto, @CurrentUser() currentUser: UserResponseDto, @Req() request: Request) {
+    return this.mdtService.create(episodeId, dto, currentUser, request);
   }
 
   @Get('mdt-records/:id')

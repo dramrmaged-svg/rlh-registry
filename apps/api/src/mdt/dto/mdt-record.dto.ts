@@ -7,7 +7,7 @@ class ClinicalSnapshotSummaryDto {
   @Expose() albiGrade!: number | null; @Expose() bclcStage!: string | null; @Expose() labPanelCollectedAt!: Date | null; @Expose() clinicalScoreDate!: Date | null;
 }
 export class MdtRecordDto {
-  @Expose() id!: string; @Expose() patientId!: string; @Expose() mdtSessionId!: string;
+  @Expose() id!: string; @Expose() episodeId!: string; @Expose() mdtSessionId!: string;
   @Expose() @Type(() => MdtSessionSummaryDto) mdtSession!: MdtSessionSummaryDto;
   @Expose() clinicalSnapshotId!: string | null;
   @Expose() @Type(() => ClinicalSnapshotSummaryDto) clinicalSnapshot!: ClinicalSnapshotSummaryDto | null;

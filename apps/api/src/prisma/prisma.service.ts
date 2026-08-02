@@ -6,7 +6,7 @@ export type PrismaTx = Prisma.TransactionClient;
 export type TransactionIsolation = 'repeatable-read' | 'read-committed' | 'serializable';
 
 const SOFT_DELETE_FILTERABLE_ACTIONS = new Set(['findFirst','findFirstOrThrow','findMany','count','aggregate','groupBy']);
-const SOFT_DELETABLE_MODELS = new Set(['Patient','MdtRecord','Procedure','FollowUp','ToxicityEvent']);
+const SOFT_DELETABLE_MODELS = new Set(['Patient','Episode','MdtRecord','MappingSession','DosimetryPlan','TreatmentSession','FollowUp','ToxicityEvent','Lesion']);
 const MAX_CONFLICT_RETRIES = 3;
 
 function conflictRetryDelayMs(attempt: number): number {
