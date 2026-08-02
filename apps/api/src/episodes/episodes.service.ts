@@ -29,12 +29,34 @@ import { isValidEpisodeTransition, computeEpisodeAvailableActions, type EpisodeS
 
 const EPISODE_QUERY = {
   include: {
-    diagnosis: { select: { id: true, tumourType: true, aetiology: true, confirmedBclcStage: true, confirmedCpGrade: true } },
-    _count: { select: { mdtRecords: true, lesions: true, mappingSessions: true, dosimetryPlans: true, treatmentSessions: true, followUps: true, toxicityEvents: true } },
+    // deletedAt is selected (not filtered — a to-one include has no `where`)
+    // so activeDiagnosis() below can exclude a soft-deleted Diagnosis; the
+    // Prisma soft-delete middleware only rewrites top-level queries, not
+    // nested includes.
+    diagnosis: { select: { id: true, tumourType: true, aetiology: true, confirmedBclcStage: true, confirmedCpGrade: true, deletedAt: true } },
+    // Each counted relation is itself a soft-deletable model, and _count
+    // does not go through the soft-delete middleware either — filter
+    // explicitly so a deleted child is never counted as present.
+    _count: {
+      select: {
+        mdtRecords: { where: { deletedAt: null } },
+        lesions: { where: { deletedAt: null } },
+        mappingSessions: { where: { deletedAt: null } },
+        dosimetryPlans: { where: { deletedAt: null } },
+        treatmentSessions: { where: { deletedAt: null } },
+        followUps: { where: { deletedAt: null } },
+        toxicityEvents: { where: { deletedAt: null } },
+      },
+    },
   },
 } as const;
 
 type RawEpisode = Prisma.EpisodeGetPayload<typeof EPISODE_QUERY>;
+
+/** A soft-deleted Diagnosis must never satisfy a readiness check or be shown as "present" — see EPISODE_QUERY's comment. */
+function activeDiagnosis(record: RawEpisode): RawEpisode['diagnosis'] | null {
+  return record.diagnosis && record.diagnosis.deletedAt === null ? record.diagnosis : null;
+}
 
 function toSummaryDto(record: RawEpisode): EpisodeSummaryDto {
   return plainToInstance(
@@ -49,9 +71,10 @@ function toDetailDto(record: RawEpisode): EpisodeDetailDto {
     EpisodeDetailDto,
     {
       ...record,
+      diagnosis: activeDiagnosis(record),
       availableActions: computeEpisodeAvailableActions(record.status as EpisodeStatusValue),
       completeness: {
-        hasDiagnosis: record.diagnosis !== null,
+        hasDiagnosis: activeDiagnosis(record) !== null,
         mdtRecordCount: record._count.mdtRecords,
         lesionCount: record._count.lesions,
         mappingSessionCount: record._count.mappingSessions,
@@ -116,7 +139,11 @@ export class EpisodesService {
           patientId,
           episodeNumber,
           firstOrRepeat: firstOrRepeat as never,
-          previousEpisodeId: dto.previousEpisodeId ?? null,
+          // A previousEpisodeId is only meaningful (and ownership-checked,
+          // above) for REPEAT episodes — silently discard it for FIRST so a
+          // client can't link a FIRST episode to another patient's episode,
+          // or trigger an uncaught FK violation with a bogus id.
+          previousEpisodeId: firstOrRepeat === 'REPEAT' ? dto.previousEpisodeId : null,
           referralDate: dto.referralDate ? new Date(dto.referralDate) : null,
           referralSource: dto.referralSource ?? null,
           referringClinicianOverride: dto.referringClinicianOverride ?? null,
@@ -138,7 +165,7 @@ export class EpisodesService {
       const result = await tx.episode.updateMany({
         where: { id, version: dto.version, deletedAt: null },
         data: {
-          ...(dto.referralDate !== undefined && { referralDate: new Date(dto.referralDate) }),
+          ...(dto.referralDate !== undefined && { referralDate: dto.referralDate === null ? null : new Date(dto.referralDate) }),
           ...(dto.referralSource !== undefined && { referralSource: dto.referralSource }),
           ...(dto.referringClinicianOverride !== undefined && { referringClinicianOverride: dto.referringClinicianOverride }),
           updatedById: currentUser.id,
@@ -173,7 +200,7 @@ export class EpisodesService {
       }
       const findings: ReadinessFinding[] = [
         ...evaluateEpisodeStructuralReadiness({ firstOrRepeat: existing.firstOrRepeat, previousEpisodeId: existing.previousEpisodeId }),
-        ...(toStatus === 'COMPLETED' ? evaluateEpisodeCompletionReadiness({ status: fromStatus, diagnosisId: existing.diagnosis?.id ?? null }) : []),
+        ...(toStatus === 'COMPLETED' ? evaluateEpisodeCompletionReadiness({ status: fromStatus, diagnosisId: activeDiagnosis(existing)?.id ?? null }) : []),
         ...(toStatus === 'MDT_APPROVED' ? evaluateMdtApprovalReadiness({ mdtRecordCount: existing._count.mdtRecords }) : []),
       ];
       const { unresolved, overridden } = resolveReadinessFindings(findings, dto.overrideWarnings ?? []);

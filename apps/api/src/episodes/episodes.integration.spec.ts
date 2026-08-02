@@ -184,4 +184,52 @@ describe('EpisodesService (integration)', () => {
       expect(err).toBeInstanceOf(ApiException);
     }
   });
+
+  it('discards a supplied previousEpisodeId for a FIRST episode instead of persisting a cross-patient link', async () => {
+    const otherPatient = await seedPatient(rawClient, currentUser.id, { firstName: 'Other', lastName: 'Patient' });
+    const otherEpisode = await episodesService.create(otherPatient.id, {}, currentUser, fakeRequest);
+    const created = await episodesService.create(patientId, { firstOrRepeat: 'FIRST', previousEpisodeId: otherEpisode.id }, currentUser, fakeRequest);
+    expect(created.previousEpisodeId).toBeNull();
+    expect(created.firstOrRepeat).toBe('FIRST');
+  });
+
+  it('clears referralDate (not epoch 1970) when patched with an explicit null', async () => {
+    const episode = await episodesService.create(patientId, { referralDate: '2024-01-15' }, currentUser, fakeRequest);
+    const patched = await episodesService.patch(episode.id, { referralDate: null, version: episode.version }, currentUser, fakeRequest);
+    expect(patched.referralDate).toBeNull();
+  });
+
+  it('excludes a soft-deleted MDT record from the MDT-approval readiness check', async () => {
+    let episode = await episodesService.create(patientId, {}, currentUser, fakeRequest);
+    const session = await seedMdtSession(rawClient, currentUser.id);
+    const mdtRecord = await seedMdtRecord(rawClient, { episodeId: episode.id, mdtSessionId: session.id, createdById: currentUser.id });
+    await rawClient.mdtRecord.update({ where: { id: mdtRecord.id }, data: { deletedAt: new Date() } });
+
+    const r1 = await episodesService.transition(episode.id, { toStatus: 'AWAITING_MDT', version: episode.version }, currentUser, fakeRequest);
+    episode = r1.record;
+    expect(episode.completeness.mdtRecordCount).toBe(0);
+
+    // Only a soft-deleted MDT record exists -> the warning must still fire.
+    await expect(episodesService.transition(episode.id, { toStatus: 'MDT_APPROVED', version: episode.version }, currentUser, fakeRequest)).rejects.toMatchObject({
+      code: 'READINESS_CHECK_FAILED',
+    });
+  });
+
+  it('excludes a soft-deleted Diagnosis from the completion readiness check', async () => {
+    let episode = await episodesService.create(patientId, {}, currentUser, fakeRequest);
+    const session = await seedMdtSession(rawClient, currentUser.id);
+    await seedMdtRecord(rawClient, { episodeId: episode.id, mdtSessionId: session.id, createdById: currentUser.id });
+    const diagnosis = await rawClient.diagnosis.create({ data: { episodeId: episode.id, tumourType: 'HCC', createdById: currentUser.id, updatedById: currentUser.id } });
+    await rawClient.diagnosis.update({ where: { id: diagnosis.id }, data: { deletedAt: new Date() } });
+
+    const path = ['AWAITING_MDT', 'MDT_APPROVED', 'CLINIC_ASSESSMENT_COMPLETED', 'AWAITING_MAPPING', 'MAPPING_COMPLETED', 'AWAITING_DOSIMETRY', 'TREATMENT_APPROVED', 'AWAITING_TREATMENT', 'TREATMENT_COMPLETED', 'EARLY_FOLLOW_UP', 'IMAGING_FOLLOW_UP'] as const;
+    for (const toStatus of path) {
+      const result = await episodesService.transition(episode.id, { toStatus, version: episode.version }, currentUser, fakeRequest);
+      episode = result.record;
+    }
+    expect(episode.completeness.hasDiagnosis).toBe(false);
+    await expect(episodesService.transition(episode.id, { toStatus: 'COMPLETED', version: episode.version }, currentUser, fakeRequest)).rejects.toMatchObject({
+      code: 'READINESS_CHECK_FAILED',
+    });
+  });
 });
