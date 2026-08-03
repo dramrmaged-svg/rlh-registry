@@ -53,7 +53,6 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const audit_service_1 = require("../audit/audit.service");
 const users_service_1 = require("../users/users.service");
 const REFRESH_TOKEN_TTL_DAYS = 7;
-const BCRYPT_ROUNDS = 12;
 const REFRESH_COOKIE_NAME = 'rlh_refresh';
 let AuthService = AuthService_1 = class AuthService {
     prisma;
@@ -134,7 +133,10 @@ let AuthService = AuthService_1 = class AuthService {
         const resetToken = crypto.randomBytes(32).toString('hex');
         this.logger.debug(`[DEV ONLY] Password reset token for ${email}: ${resetToken}`);
     }
-    async completePasswordReset(_token, _newPassword, _request) {
+    async completePasswordReset(token, newPassword, request) {
+        void token;
+        void newPassword;
+        void request;
         throw new common_1.BadRequestException({ code: 'NOT_IMPLEMENTED', message: 'Password reset not yet fully implemented' });
     }
     generateAccessToken(user) {

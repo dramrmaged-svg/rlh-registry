@@ -71,9 +71,13 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
                     code = 'DUPLICATE_EMAIL';
                     message = 'A user with this email address already exists';
                 }
-                else if (targetStr.includes('patientId') && targetStr.includes('mdtSessionId')) {
+                else if (targetStr.includes('episodeId') && targetStr.includes('mdtSessionId')) {
                     code = 'DUPLICATE_MDT_RECORD';
-                    message = 'An MDT record already exists for this patient and session';
+                    message = 'An MDT record already exists for this episode and session';
+                }
+                else if (targetStr.includes('patientId') && targetStr.includes('episodeNumber')) {
+                    code = 'DUPLICATE_EPISODE_NUMBER';
+                    message = 'An episode with this number already exists for this patient';
                 }
                 else if (targetStr.includes('nhs_number') || targetStr.includes('patient_identifiers_nhs')) {
                     code = 'DUPLICATE_IDENTIFIER';

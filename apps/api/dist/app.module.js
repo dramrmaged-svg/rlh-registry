@@ -16,6 +16,15 @@ const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const patients_module_1 = require("./patients/patients.module");
 const mdt_module_1 = require("./mdt/mdt.module");
+const episodes_module_1 = require("./episodes/episodes.module");
+const vocabularies_module_1 = require("./vocabularies/vocabularies.module");
+const lesions_module_1 = require("./lesions/lesions.module");
+const diagnosis_module_1 = require("./diagnosis/diagnosis.module");
+const mapping_module_1 = require("./mapping/mapping.module");
+const dosimetry_module_1 = require("./dosimetry/dosimetry.module");
+const treatment_module_1 = require("./treatment/treatment.module");
+const followup_module_1 = require("./followup/followup.module");
+const toxicity_module_1 = require("./toxicity/toxicity.module");
 const audit_module_1 = require("./audit/audit.module");
 const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("./auth/guards/roles.guard");
@@ -32,6 +41,15 @@ exports.AppModule = AppModule = __decorate([
             users_module_1.UsersModule,
             patients_module_1.PatientsModule,
             mdt_module_1.MdtModule,
+            episodes_module_1.EpisodesModule,
+            vocabularies_module_1.VocabulariesModule,
+            lesions_module_1.LesionsModule,
+            diagnosis_module_1.DiagnosisModule,
+            mapping_module_1.MappingModule,
+            dosimetry_module_1.DosimetryModule,
+            treatment_module_1.TreatmentModule,
+            followup_module_1.FollowUpModule,
+            toxicity_module_1.ToxicityModule,
             audit_module_1.AuditModule,
         ],
         providers: [

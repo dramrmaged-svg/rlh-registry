@@ -36,7 +36,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedUser = seedUser;
 exports.seedPatient = seedPatient;
 exports.seedMdtSession = seedMdtSession;
+exports.seedEpisode = seedEpisode;
+exports.seedDiagnosis = seedDiagnosis;
 exports.seedMdtRecord = seedMdtRecord;
+exports.seedLesion = seedLesion;
+exports.seedMappingSession = seedMappingSession;
+exports.seedDosimetryPlan = seedDosimetryPlan;
+exports.seedTreatmentSession = seedTreatmentSession;
+exports.seedVocabulary = seedVocabulary;
 const bcrypt = __importStar(require("bcrypt"));
 const ROUNDS = 4;
 async function seedUser(client, opts = {}) {
@@ -68,14 +75,89 @@ async function seedMdtSession(client, createdById) {
         data: { sessionDate: new Date('2024-03-20'), createdById },
     });
 }
+async function seedEpisode(client, createdById, opts = {}) {
+    return client.episode.create({
+        data: {
+            patientId: opts.patientId,
+            episodeNumber: opts.episodeNumber ?? 1,
+            firstOrRepeat: (opts.firstOrRepeat ?? 'FIRST'),
+            previousEpisodeId: opts.previousEpisodeId ?? null,
+            status: (opts.status ?? 'REFERRED'),
+            createdById,
+            updatedById: createdById,
+        },
+    });
+}
+async function seedDiagnosis(client, createdById, opts) {
+    return client.diagnosis.create({
+        data: {
+            episodeId: opts.episodeId,
+            tumourType: opts.tumourType ?? 'HCC',
+            createdById,
+            updatedById: createdById,
+        },
+    });
+}
 async function seedMdtRecord(client, opts) {
     return client.mdtRecord.create({
         data: {
-            patientId: opts.patientId,
+            episodeId: opts.episodeId,
             mdtSessionId: opts.mdtSessionId,
             lockStatus: (opts.lockStatus ?? 'DRAFT'),
             createdById: opts.createdById,
             updatedById: opts.createdById,
         },
+    });
+}
+async function seedLesion(client, createdById, opts) {
+    return client.lesion.create({
+        data: {
+            episodeId: opts.episodeId,
+            lesionNumber: opts.lesionNumber ?? 1,
+            createdById,
+            updatedById: createdById,
+        },
+    });
+}
+async function seedMappingSession(client, createdById, opts) {
+    return client.mappingSession.create({
+        data: {
+            episodeId: opts.episodeId,
+            sessionDate: opts.sessionDate ?? new Date('2024-04-01'),
+            createdById,
+            updatedById: createdById,
+        },
+    });
+}
+async function seedDosimetryPlan(client, createdById, opts) {
+    return client.dosimetryPlan.create({
+        data: {
+            episodeId: opts.episodeId,
+            planDate: opts.planDate ?? new Date('2024-04-10'),
+            planningModel: opts.planningModel ?? 'BSA',
+            createdById,
+            updatedById: createdById,
+        },
+    });
+}
+async function seedTreatmentSession(client, createdById, opts) {
+    return client.treatmentSession.create({
+        data: {
+            episodeId: opts.episodeId,
+            sessionNumber: opts.sessionNumber ?? 1,
+            sessionDate: opts.sessionDate ?? new Date('2024-04-20'),
+            createdById,
+            updatedById: createdById,
+        },
+    });
+}
+async function seedVocabulary(client, opts) {
+    return client.vocabulary.create({
+        data: {
+            key: opts.key,
+            label: opts.label ?? opts.key,
+            options: { create: opts.options.map((o, i) => ({ code: o.code, label: o.label, sortOrder: o.sortOrder ?? i })) },
+        },
+        include: { options: true },
     });
 }

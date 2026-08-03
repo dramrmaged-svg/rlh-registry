@@ -114,7 +114,7 @@ __decorate([
 ], ClinicalSnapshotSummaryDto.prototype, "clinicalScoreDate", void 0);
 class MdtRecordDto {
     id;
-    patientId;
+    episodeId;
     mdtSessionId;
     mdtSession;
     clinicalSnapshotId;
@@ -147,7 +147,7 @@ __decorate([
 __decorate([
     (0, class_transformer_1.Expose)(),
     __metadata("design:type", String)
-], MdtRecordDto.prototype, "patientId", void 0);
+], MdtRecordDto.prototype, "episodeId", void 0);
 __decorate([
     (0, class_transformer_1.Expose)(),
     __metadata("design:type", String)

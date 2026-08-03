@@ -2,6 +2,7 @@ import {
   evaluateEpisodeStructuralReadiness,
   evaluateEpisodeCompletionReadiness,
   evaluateMdtApprovalReadiness,
+  evaluateTreatmentSessionReadiness,
   resolveReadinessFindings,
 } from './episode-readiness-rules';
 
@@ -43,6 +44,19 @@ describe('evaluateMdtApprovalReadiness', () => {
 
   it('passes when at least one MDT record exists', () => {
     expect(evaluateMdtApprovalReadiness({ mdtRecordCount: 1 })).toHaveLength(0);
+  });
+});
+
+describe('evaluateTreatmentSessionReadiness', () => {
+  it('warns when there is no approved dosimetry plan', () => {
+    const findings = evaluateTreatmentSessionReadiness({ hasApprovedDosimetryPlan: false });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].severity).toBe('WARNING');
+    expect(findings[0].code).toBe('TREATMENT_WITHOUT_APPROVED_DOSIMETRY_PLAN');
+  });
+
+  it('passes when an approved dosimetry plan exists', () => {
+    expect(evaluateTreatmentSessionReadiness({ hasApprovedDosimetryPlan: true })).toHaveLength(0);
   });
 });
 

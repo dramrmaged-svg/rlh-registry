@@ -77,6 +77,29 @@ export function evaluateMdtApprovalReadiness(episode: EpisodeForMdtApprovalReadi
   return findings;
 }
 
+export interface TreatmentSessionReadinessCheck {
+  hasApprovedDosimetryPlan: boolean;
+}
+
+/**
+ * Findings gated on creating a TreatmentSession. Per
+ * docs/adr/0001-episode-architecture.md, a treatment session before an
+ * approved dosimetry plan is clinically unusual but not impossible
+ * (urgent/compassionate pathways) — WARNING, override-able, reusing the
+ * mechanism built for the Episode module rather than a new one.
+ */
+export function evaluateTreatmentSessionReadiness(check: TreatmentSessionReadinessCheck): ReadinessFinding[] {
+  const findings: ReadinessFinding[] = [];
+  if (!check.hasApprovedDosimetryPlan) {
+    findings.push({
+      code: 'TREATMENT_WITHOUT_APPROVED_DOSIMETRY_PLAN',
+      severity: 'WARNING',
+      message: 'This episode has no approved dosimetry plan yet.',
+    });
+  }
+  return findings;
+}
+
 export interface OverrideWarning {
   code: string;
   reason: string;
