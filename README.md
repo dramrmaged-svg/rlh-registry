@@ -7,10 +7,54 @@ with repeat SIRT treatments gets independent data per episode, never a
 silent overwrite. See `apps/api/docs/adr/0001-episode-architecture.md` for
 the architecture rationale.
 
-- `apps/api` — NestJS + Prisma + PostgreSQL backend.
-- `apps/web` — React + TypeScript + Vite frontend.
+Two editions exist, sharing the same data model, calculation engine and
+vocabulary lists:
 
-## Quick start (local development)
+- **`RLH_SIRT_Registry_v2.html`** (repo root) — a single self-contained HTML
+  file, no install/server/database required. Data is stored only in the
+  browser's `localStorage`. Use this to start entering real data today; see
+  "Local HTML edition" below for what it does and doesn't do.
+- **`apps/api` (NestJS + Prisma + PostgreSQL) + `apps/web` (React + Vite)** —
+  the multi-user server version: real database, concurrent access, auth,
+  audit logging, optimistic locking. Upgrade to this whenever you're ready;
+  it uses the same episode structure, so an exported HTML-edition backup can
+  be migrated in without re-entering anything.
+
+## Local HTML edition — quick start
+
+Open `RLH_SIRT_Registry_v2.html` directly in a browser (double-click it, or
+`File → Open`). No build step, no server, nothing to install.
+
+- **Single-user, single-browser only.** Data lives in that browser's
+  `localStorage` — it is not shared between users or devices, and two people
+  opening the file at the same time will not see each other's entries.
+- **Export a backup regularly** (sidebar button) — a JSON file you can store
+  safely. Clearing browser data, or opening the file on a different
+  computer, loses anything that wasn't exported. **Import backup** loads a
+  previously exported file back in (this replaces whatever is currently in
+  the browser).
+- Implements the same episode-per-treatment model as the server edition: a
+  repeat SIRT episode is always a brand-new episode record linked to the
+  previous one via `previousEpisodeId` — no legacy-style silent overwrite.
+- Carries over the full calculation engine (age, BMI/BSA, Child-Pugh,
+  MELD-3.0/MELD-Na, ALBI, BCLC 2022, lung-shunt risk banding) and the
+  controlled vocabulary lists (tumour type, aetiology, PVTT, LI-RADS,
+  Michels hepatic arterial anatomy, embolic materials, dosimetry planning
+  model/particle products, progression reasons, REILD grade, outcome
+  status) verbatim from `apps/api`, including the same flagged-not-fixed
+  legacy defects (see the "unverified formula" badge on MELD-Na).
+- Enforces the same core safety rules as the backend, client-side: episode
+  status transitions block on missing outcome/treatment data where the
+  backend does; adding a treatment session without an approved dosimetry
+  plan requires an explicit override reason (≥10 characters), logged to the
+  episode's timeline; an approved dosimetry plan is locked until explicitly
+  unlocked with a reason.
+- **Not included in this edition** (available in the server edition, or
+  roadmapped): multi-user concurrent access, authentication/RBAC, a
+  database-level audit trail (a lightweight per-episode timeline is kept
+  instead), legacy-data import, reports/exports, analytics.
+
+## Server edition — quick start (local development)
 
 ### 1. PostgreSQL
 

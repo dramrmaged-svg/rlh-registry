@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RLH SIRT Registry — Local Edition (Episode Architecture)</title>
+<style>
+:root {
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-border: #d7dde3;
+  --color-text: #1b232c;
+  --color-text-muted: #5a6774;
+  --color-primary: #0b5cab;
+  --color-primary-dark: #073e73;
+  --color-danger: #b5261a;
+  --color-warning: #9a6400;
+  --color-success: #1a7a3d;
+  --radius: 6px;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--color-bg); color: var(--color-text); font-size: 14px; }
+a { color: var(--color-primary); }
+.app-shell { display: flex; min-height: 100vh; }
+.app-sidebar {
+  width: 240px; flex-shrink: 0; background: var(--color-primary-dark); color: #fff;
+  display: flex; flex-direction: column; padding: 16px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.app-sidebar h1 { font-size: 15px; padding: 0 16px 16px; margin: 0; border-bottom: 1px solid rgba(255,255,255,0.15); line-height: 1.4; }
+.app-sidebar nav { display: flex; flex-direction: column; margin-top: 12px; }
+.app-sidebar nav a { color: #cfe2f5; text-decoration: none; padding: 10px 16px; }
+.app-sidebar nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.app-sidebar .user-box { margin-top: auto; padding: 12px 16px; font-size: 12px; border-top: 1px solid rgba(255,255,255,0.15); }
+.app-sidebar .user-box input { border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); color: #fff; padding: 5px 6px; }
+.app-sidebar .user-box button { margin-top: 6px; }
+.app-main { flex: 1; padding: 24px; max-width: 1100px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.card h2 { margin-top: 0; font-size: 16px; }
+.card h3 { font-size: 14px; margin: 0 0 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 13px; }
+.field span { color: var(--color-text-muted); }
+.field .required { color: var(--color-danger); margin-left: 2px; }
+.field input, .field select, .field textarea {
+  border: 1px solid var(--color-border); border-radius: 4px; padding: 6px 8px; font-size: 14px; font-family: inherit;
+}
+.field textarea { resize: vertical; min-height: 50px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+button { cursor: pointer; border-radius: 4px; border: 1px solid var(--color-border); background: var(--color-surface); padding: 7px 14px; font-size: 13px; }
+button.primary { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+button.primary:hover { background: var(--color-primary-dark); }
+button.danger { color: var(--color-danger); border-color: var(--color-danger); background: #fff; }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+th { color: var(--color-text-muted); font-weight: 600; }
+tr:hover td { background: #f9fbfc; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.badge-status { background: #e4edf6; color: var(--color-primary-dark); }
+.badge-block { background: #fbe4e2; color: var(--color-danger); }
+.badge-warning { background: #fdf1d6; color: var(--color-warning); }
+.badge-success { background: #e1f3e6; color: var(--color-success); }
+.notice { padding: 10px 12px; border-radius: var(--radius); margin-bottom: 12px; font-size: 13px; }
+.notice-error { background: #fbe4e2; color: var(--color-danger); border: 1px solid #f2b3ac; }
+.notice-info { background: #e4edf6; color: var(--color-primary-dark); border: 1px solid #b9d3ea; }
+.top-context { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.top-context h1 { font-size: 20px; margin: 0; }
+.top-context .meta { color: var(--color-text-muted); font-size: 13px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border); margin-bottom: 16px; flex-wrap: wrap; }
+.tabs a { text-decoration: none; }
+.tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 12px; }
+.tabs button.active { border-bottom-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
+.list-item-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.muted { color: var(--color-text-muted); }
+.timeline { list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto; }
+.timeline li { padding: 6px 0; border-left: 2px solid var(--color-border); padding-left: 12px; margin-left: 4px; position: relative; font-size: 13px; }
+.timeline li::before { content: ''; position: absolute; left: -5px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="app-sidebar">
+    <h1>RLH SIRT Registry<br/><span style="font-weight:400;font-size:12px;opacity:0.8;">Local HTML edition — episode architecture</span></h1>
+    <nav>
+      <a href="#/patients">Patients</a>
+    </nav>
+    <div class="user-box">
+      <label>Clinician / user name<br/>
+        <input type="text" id="actor-name-input" oninput="App.setActorName(this.value)" placeholder="Your name" style="width:100%;margin-top:4px;" />
+      </label>
+      <button type="button" style="width:100%;margin-top:10px;" onclick="App.exportBackup()">Export backup (JSON)</button>
+      <label style="display:block;width:100%;margin-top:8px;">
+        <span style="font-size:12px;">Import backup</span><br/>
+        <input type="file" accept="application/json" onchange="App.importBackup(event)" style="width:100%;margin-top:4px;" />
+      </label>
+    </div>
+  </div>
+  <div class="app-main">
+    <div class="notice notice-info">
+      <b>Local-storage edition.</b> All data lives only in this browser (no server, no multi-user access — two people
+      opening this file cannot see each other's entries). Export a backup regularly: clearing browser data, or opening
+      this file on a different device, will lose anything not exported. A multi-user server version (NestJS +
+      PostgreSQL backend, already built in this repository under <code>apps/api</code> / <code>apps/web</code>) is
+      available to move to whenever you're ready — it uses exactly the same episode data model and calculation engine
+      as this file, so nothing recorded here needs to be re-entered; a backup exported from here can be migrated in.
+    </div>
+    <div id="app"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================== Vocabulary (verbatim from apps/api/src/vocabularies/seed-data) ============================== */
+const VOCAB = {
+  DIAGNOSIS_TUMOUR_TYPE: { options: [
+    { code: 'HCC', label: 'HCC' }, { code: 'ICCA', label: 'iCCA' }, { code: 'CRLM', label: 'CRLM' },
+    { code: 'NET', label: 'NET' }, { code: 'OTHER', label: 'Other' },
+  ]},
+  AETIOLOGY: { options: [
+    { code: 'HBV', label: 'HBV' }, { code: 'HCV', label: 'HCV' }, { code: 'ALCOHOL', label: 'Alcohol' },
+    { code: 'MASH_MASLD', label: 'MASH/MASLD' }, { code: 'PSC', label: 'PSC' }, { code: 'AIH', label: 'AIH' },
+    { code: 'HAEMOCHROMATOSIS', label: 'Haemochromatosis' }, { code: 'NON_CIRRHOTIC', label: 'Non-cirrhotic' },
+    { code: 'CRYPTOGENIC', label: 'Cryptogenic' }, { code: 'OTHER', label: 'Other' }, { code: 'NOT_APPLICABLE', label: 'N/A' },
+  ]},
+  PVTT: { options: [
+    { code: 'NONE', label: 'None' }, { code: 'SEGMENTAL', label: 'Segmental' },
+    { code: 'LOBAR', label: 'Lobar' }, { code: 'MAIN', label: 'Main' },
+  ]},
+  LIRADS: { options: [
+    { code: 'LR_1', label: 'LR-1' }, { code: 'LR_2', label: 'LR-2' }, { code: 'LR_3', label: 'LR-3' },
+    { code: 'LR_4', label: 'LR-4' }, { code: 'LR_5', label: 'LR-5 Definitely HCC' }, { code: 'LR_M', label: 'LR-M' },
+    { code: 'LR_TIV', label: 'LR-TIV' }, { code: 'NOT_APPLICABLE', label: 'N/A — not HCC' },
+  ]},
+  MICHELS_ANATOMY: { options: [
+    { code: 'I', label: 'I: Standard anatomy' }, { code: 'II', label: 'II: Replaced LHA from LGA' },
+    { code: 'III', label: 'III: Replaced RHA from SMA' }, { code: 'IV', label: 'IV: Replaced RHA and LHA' },
+    { code: 'V', label: 'V: Accessory LHA from LGA' }, { code: 'VI', label: 'VI: Accessory RHA from SMA' },
+    { code: 'VII', label: 'VII: Accessory RHA and LHA' }, { code: 'VIII', label: 'VIII: Accessory RHA or LHA and replaced LHA or RHA' },
+    { code: 'IX', label: 'IX: CHA replaced to SMA' }, { code: 'X', label: 'X: CHA replaced to LGA' },
+    { code: 'XI', label: 'XI: CHA from SMA + accessory LHA from LGA' }, { code: 'XII', label: 'XII: CHA originates directly from aorta' },
+    { code: 'UNCLASSIFIED_CHA_SEPARATE_AORTA', label: 'Unclassified: CHA separate origin from aorta' },
+    { code: 'UNCLASSIFIED_DOUBLE_HA', label: 'Unclassified: Double hepatic artery' },
+    { code: 'UNCLASSIFIED_PHA_SMA_GDA_AORTA', label: 'Unclassified: PHA replaced to SMA; GDA origin from aorta' },
+    { code: 'UNCLASSIFIED_SEPARATE_LGA_RHA_LHA', label: 'Unclassified: Separate origin of LGA, RHA and LHA from aorta' },
+    { code: 'UNCLASSIFIED_REPLACED_CHA', label: 'Unclassified: Replaced CHA' },
+    { code: 'UNCLASSIFIED_EARLY_SEPARATE_RHA', label: 'Unclassified: Early separate origin of right hepatic artery' },
+    { code: 'UNCLASSIFIED_LT_RT_GA_CELIAC', label: 'Unclassified: Lt and Rt GA from Celiac' },
+    { code: 'UNCLASSIFIED_RT_IPA_LT_GA', label: 'Unclassified: Rt IPA from Lt GA' },
+    { code: 'UNCLASSIFIED_CHA_SEPARATE_AORTA_COMMON_SMA_SPLENIC', label: 'Unclassified: CHA separate origin from aorta and common origin of SMA and splenic artery' },
+    { code: 'UNCLASSIFIED_REPLACED_LHA_LT_IPA', label: 'Unclassified: Replaced LHA and Lt IPA from LHA' },
+    { code: 'UNCLASSIFIED_TRIFURCATION_CHA_GDA_SPLENIC', label: 'Unclassified: Trifurcation of CHA, GDA and splenic artery' },
+    { code: 'UNCLASSIFIED_TRIFURCATION_RHA_GDA_SPLENIC_REPLACED_LHA', label: 'Unclassified: Trifurcation of RHA, GDA and splenic artery with replaced LHA' },
+    { code: 'UNCLASSIFIED_RHA_AORTA_REPLACED_LHA', label: 'Unclassified: RHA from aorta and replaced LHA' },
+    { code: 'UNCLASSIFIED_REPLACED_RHA_LHA_MIDDLE_HA', label: 'Unclassified: Replaced RHA from SMA, replaced LHA from LGA and middle HA from proper HA' },
+    { code: 'UNCLASSIFIED_LGA_AORTA_NOT_CELIAC', label: 'Unclassified: LGA from aorta not from celiac' },
+  ]},
+  EMBOLIC_MATERIAL_MAPPING: { options: [
+    { code: 'NA', label: 'NA' }, { code: 'DETACHABLE_COILS', label: 'Detachable coils' },
+    { code: 'PUSHABLE_COILS', label: 'Pushable Coils' }, { code: 'CALIBRATED_PARTICLES', label: 'Calibrated Particles' },
+    { code: 'Y90', label: 'Y90' }, { code: 'PUSHABLE_COILS_AND_CALIBRATED_PARTICLES', label: 'Pushable coils & Calibrated Particles' },
+    { code: 'EMBO_CUBE_2_5MG_MERIT', label: 'Embo Cube 2.5 mg Merit' }, { code: 'GELFOAM', label: 'Gelfoam' },
+    { code: 'EMBOSPHERE_PARTICLES_40_120_MICRON', label: 'Embosphere Particles 40-120 Micron' },
+    { code: 'EMBOCEPT', label: 'Embocept' }, { code: 'MICRO_VASCULAR_PLUG', label: 'Micro vascular plug' },
+    { code: 'RESORBABLE_PARTICLES', label: 'Resorbable particles' },
+  ]},
+  EMBOLIC_MATERIAL_TREATMENT: { options: [
+    { code: 'NONE', label: 'None' }, { code: 'COILS', label: 'Coils' }, { code: 'PARTICLES', label: 'Particles' },
+    { code: 'COILS_PLUS_PARTICLES', label: 'Coils + particles' }, { code: 'OTHER', label: 'Other' },
+  ]},
+  PLANNING_MODEL: { options: [
+    { code: 'BSA', label: 'BSA' }, { code: 'PARTITION', label: 'Partition' },
+    { code: 'MIRD', label: 'MIRD' }, { code: 'VOXEL_BASED', label: 'Voxel-based' },
+  ]},
+  PARTICLE_PRODUCT: { options: [
+    { code: 'RESIN_SIR_SPHERES_35_70UM', label: 'Resin (SIR-Spheres) 35-70 µm' },
+    { code: 'GLASS_THERASPHERE_20_30UM', label: 'Glass (TheraSphere) 20-30 µm' },
+    { code: 'SIR_SPHERES_2_5GBQ_VIAL', label: 'SIR-Spheres 2.5 GBq vial' },
+    { code: 'THERASPHERE_3GBQ_VIAL', label: 'TheraSphere 3 GBq vial' }, { code: 'THERASPHERE_5GBQ_VIAL', label: 'TheraSphere 5 GBq vial' },
+    { code: 'THERASPHERE_7GBQ_VIAL', label: 'TheraSphere 7 GBq vial' }, { code: 'THERASPHERE_10GBQ_VIAL', label: 'TheraSphere 10 GBq vial' },
+    { code: 'THERASPHERE_15GBQ_VIAL', label: 'TheraSphere 15 GBq vial' }, { code: 'THERASPHERE_20GBQ_VIAL', label: 'TheraSphere 20 GBq vial' },
+  ]},
+  PROGRESSION_REASON: { options: [
+    { code: 'NEW_INTRAHEPATIC_LESIONS', label: 'New intrahepatic lesion(s)' },
+    { code: 'GROWTH_RESIDUAL_VIABLE', label: 'Growth of treated lesion(s) — residual viable tumour' },
+    { code: 'GROWTH_RECURRENCE_TREATED_SEGMENT', label: 'Growth of treated lesion(s) — recurrence in treated segment' },
+    { code: 'NEW_EXTRAHEPATIC_LYMPH_NODE', label: 'New extrahepatic lesion(s) — lymph node' },
+    { code: 'NEW_EXTRAHEPATIC_LUNG', label: 'New extrahepatic lesion(s) — lung' },
+    { code: 'NEW_EXTRAHEPATIC_BONE', label: 'New extrahepatic lesion(s) — bone' },
+    { code: 'NEW_EXTRAHEPATIC_PERITONEAL', label: 'New extrahepatic lesion(s) — peritoneal' },
+    { code: 'NEW_EXTRAHEPATIC_ADRENAL', label: 'New extrahepatic lesion(s) — adrenal' },
+    { code: 'NEW_EXTRAHEPATIC_OTHER', label: 'New extrahepatic lesion(s) — other' },
+    { code: 'VASCULAR_INVASION_PORTAL_VEIN', label: 'Vascular invasion progression — portal vein' },
+    { code: 'VASCULAR_INVASION_HEPATIC_VEIN', label: 'Vascular invasion progression — hepatic vein' },
+    { code: 'BIOCHEMICAL_ONLY', label: 'Biochemical progression only (AFP/CEA/CA19-9 rise)' },
+    { code: 'COMBINED_INTRA_EXTRAHEPATIC', label: 'Combined intrahepatic + extrahepatic progression' },
+    { code: 'INDETERMINATE_AWAITING_IMAGING', label: 'Indeterminate / awaiting imaging' },
+  ]},
+  REILD_GRADE: { options: [
+    { code: 'NO', label: 'No' }, { code: 'YES_GRADE_1_2', label: 'Yes — Grade 1–2' },
+    { code: 'YES_GRADE_3', label: 'Yes — Grade 3' }, { code: 'YES_GRADE_4_5', label: 'Yes — Grade 4–5' },
+  ]},
+  OUTCOME_STATUS: { options: [
+    { code: 'ALIVE', label: 'Alive' }, { code: 'DIED_LIVER_DISEASE', label: 'Died — liver disease' },
+    { code: 'DIED_OTHER', label: 'Died — other' }, { code: 'LOST_TO_FOLLOW_UP', label: 'Lost to follow-up' },
+    { code: 'TRANSPLANTED', label: 'Transplanted' },
+  ]},
+};
+
+const SEX_OPTIONS = [
+  { code: 'MALE', label: 'Male' }, { code: 'FEMALE', label: 'Female' },
+  { code: 'INDETERMINATE', label: 'Indeterminate' }, { code: 'UNKNOWN', label: 'Unknown' },
+];
+const RESPONSE_OPTIONS = [
+  { code: 'CR', label: 'Complete response (CR)' }, { code: 'PR', label: 'Partial response (PR)' },
+  { code: 'SD', label: 'Stable disease (SD)' }, { code: 'PD', label: 'Progressive disease (PD)' },
+];
+const LATERALITY_OPTIONS = [
+  { code: 'LEFT', label: 'Left' }, { code: 'RIGHT', label: 'Right' }, { code: 'BILOBAR', label: 'Bilobar' },
+];
+
+/* ============================== Small utilities ============================== */
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function uid() {
+  return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+}
+function nowIso() { return new Date().toISOString(); }
+function fdStr(data, name) { const v = data.get(name); return (v === null || v === '') ? null : String(v); }
+function fdNum(data, name) { const v = data.get(name); return (v === null || v === '') ? null : Number(v); }
+function fdBool(data, name) { return data.get(name) !== null; }
+function labelFor(vocab, code) { if (!code) return ''; const o = vocab.options.find(function (o) { return o.code === code; }); return o ? o.label : code; }
+function riskBadgeClass(band) {
+  if (band === 'LOW') return 'success';
+  if (band === 'BORDERLINE') return 'status';
+  if (band === 'HIGH' || band === 'VERY_HIGH') return 'warning';
+  return 'block';
+}
+function getActorName() { return localStorage.getItem('rlh_actor_name') || 'Unknown user'; }
+
+/* ============================== Calculation engine (faithful port of apps/api/src/calculations) ============================== */
+function calcResult(value, formulaVersion, sourceFields, explanation) {
+  return { value: value, status: 'CALCULATED', formulaVersion: formulaVersion, sourceFields: sourceFields, missingFields: [], explanation: explanation };
+}
+function notCalc(formulaVersion, sourceFields, missingFields, explanation) {
+  return { value: null, status: 'NOT_CALCULABLE', formulaVersion: formulaVersion, sourceFields: sourceFields, missingFields: missingFields, explanation: explanation };
+}
+function parseComboCP(value) {
+  if (!value) return 0;
+  const v = String(value).trim();
+  const n = parseInt(v, 10);
+  if (n >= 1 && n <= 3) return n;
+  if (/none|no/i.test(v)) return 1;
+  if (/mild|grade\s*1|grade\s*2|controlled/i.test(v)) return 2;
+  if (/moderate|severe|grade\s*3|grade\s*4|refractory/i.test(v)) return 3;
+  return 0;
+}
+function meld3Inputs(input) {
+  const bili = input.bilirubinUmolL, alb = input.albuminGL, inrV = input.inr, cr = input.creatinineUmolL, na = input.sodiumMmolL;
+  const values = [bili, alb, inrV, cr, na];
+  for (let i = 0; i < values.length; i++) { if (!(values[i] > 0)) return null; }
+  return { bili: bili, alb: alb, inrV: inrV, cr: cr, na: na };
+}
+function meld3Missing(input) {
+  return ['bilirubinUmolL', 'sodiumMmolL', 'inr', 'creatinineUmolL', 'albuminGL'].filter(function (f) { return !(input[f] > 0); });
+}
+function computeMeld3Raw(v, sex, onDialysis) {
+  const b = Math.max(v.bili / 17.1, 1);
+  const a = Math.min(Math.max(v.alb / 10, 1.5), 3.5);
+  const i = Math.max(v.inrV, 1);
+  const c = onDialysis ? 3 : Math.min(Math.max(v.cr / 88.4, 1), 3);
+  const n = Math.min(Math.max(v.na, 125), 137);
+  const f = sex === 'FEMALE' ? 1.33 : 0;
+  const raw = f + 4.56 * Math.log(b) + 0.82 * (137 - n) - 0.24 * (137 - n) * Math.log(b) +
+    9.09 * Math.log(i) + 11.14 * Math.log(c) + 1.85 * (3.5 - a) - 1.83 * (3.5 - a) * Math.log(c) + 6;
+  return Math.round(Math.min(Math.max(raw, 6), 40));
+}
+function isMilanEligible(count, largest, pvtt, ehd) {
+  if (ehd || pvtt.indexOf('main') !== -1 || pvtt.indexOf('lobar') !== -1) return false;
+  return count <= 3 && largest <= 5 && !(count === 1 && largest > 5) && !(count > 1 && largest > 3);
+}
+const CALC = {
+  age: function (dob, asOf) {
+    const FV = 'LEGACY_CALC_AGE_v105';
+    if (!dob) return notCalc(FV, ['dateOfBirth', 'asOfDate'], ['dateOfBirth'], 'Date of birth is required to calculate age.');
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return notCalc(FV, ['dateOfBirth', 'asOfDate'], ['dateOfBirth'], 'Date of birth is not a valid date.');
+    const ref = asOf ? new Date(asOf) : new Date();
+    if (isNaN(ref.getTime())) return notCalc(FV, ['dateOfBirth', 'asOfDate'], ['asOfDate'], 'Reference date is not a valid date.');
+    let age = ref.getFullYear() - d.getFullYear();
+    const md = ref.getMonth() - d.getMonth();
+    if (md < 0 || (md === 0 && ref.getDate() < d.getDate())) age--;
+    return calcResult(age, FV, ['dateOfBirth', 'asOfDate'], 'Age computed as whole years between date of birth and ' + (asOf ? 'the reference date' : "today's date") + '.');
+  },
+  bmi: function (ht, wt) {
+    const FV = 'LEGACY_CALC_BMI_v105';
+    const missing = [];
+    if (!(ht > 0)) missing.push('heightCm');
+    if (!(wt > 0)) missing.push('weightKg');
+    if (missing.length) return notCalc(FV, ['heightCm', 'weightKg'], missing, 'Height and weight (both > 0) are required to calculate BMI.');
+    const bmi = wt / ((ht / 100) * (ht / 100));
+    const category = bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese';
+    return calcResult({ bmi: bmi, category: category }, FV, ['heightCm', 'weightKg'], 'BMI = weight(kg) / height(m)^2. Category thresholds: <18.5 Underweight, <25 Normal, <30 Overweight, else Obese.');
+  },
+  bsa: function (ht, wt) {
+    const FV = 'STANDARD_MOSTELLER_1.0';
+    const missing = [];
+    if (!(ht > 0)) missing.push('heightCm');
+    if (!(wt > 0)) missing.push('weightKg');
+    if (missing.length) return notCalc(FV, ['heightCm', 'weightKg'], missing, 'Height and weight (both > 0) are required to calculate BSA.');
+    const bsa = Math.sqrt((ht * wt) / 3600);
+    return calcResult(bsa, FV, ['heightCm', 'weightKg'], 'BSA (m^2) = sqrt(height(cm) x weight(kg) / 3600) — Mosteller formula.');
+  },
+  childPugh: function (bili, alb, inr, ascites, encephalopathy) {
+    const FV = 'LEGACY_CALC_CP_v105';
+    const sourceFields = ['bilirubinUmolL', 'albuminGL', 'inr', 'ascites', 'encephalopathy'];
+    const bP = (bili > 0) ? (bili < 34 ? 1 : bili <= 51 ? 2 : 3) : 0;
+    const aP = (alb > 0) ? (alb > 35 ? 1 : alb >= 28 ? 2 : 3) : 0;
+    const iP = (inr > 0) ? (inr < 1.7 ? 1 : inr <= 2.3 ? 2 : 3) : 0;
+    const asc = parseComboCP(ascites);
+    const enc = parseComboCP(encephalopathy);
+    const parts = [bP, aP, iP, asc, enc];
+    const componentsUsed = parts.filter(function (v) { return v > 0; }).length;
+    if (componentsUsed < 2) {
+      const missingFields = sourceFields.filter(function (f, i) { return parts[i] === 0; });
+      return notCalc(FV, sourceFields, missingFields, 'At least 2 of 5 components (bilirubin, albumin, INR, ascites, encephalopathy) are required.');
+    }
+    const score = bP + aP + iP + asc + enc;
+    const grade = score <= 6 ? 'A' : score <= 9 ? 'B' : 'C';
+    const explanation = componentsUsed < 5
+      ? ('Computed from only ' + componentsUsed + '/5 components (legacy behaviour, ported faithfully) — treat this result with caution; a class based on partial input can misrepresent the patient\'s true Child-Pugh grade.')
+      : 'Computed from all 5 standard components (bilirubin, albumin, INR, ascites, encephalopathy).';
+    return calcResult({ score: score, grade: grade, componentsUsed: componentsUsed }, FV, sourceFields, explanation);
+  },
+  meld3: function (input) {
+    const FV = 'LEGACY_CALC_MELD3_v105';
+    const sourceFields = ['bilirubinUmolL', 'sodiumMmolL', 'inr', 'creatinineUmolL', 'albuminGL', 'sex', 'onDialysis'];
+    const v = meld3Inputs(input);
+    if (!v) return notCalc(FV, sourceFields, meld3Missing(input), 'Bilirubin, sodium, INR, creatinine and albumin (all > 0) are required to calculate MELD-3.0.');
+    const m3 = computeMeld3Raw(v, input.sex, input.onDialysis);
+    return calcResult(m3, FV, sourceFields, 'MELD-3.0 (FMP formula), clamped to [6, 40].');
+  },
+  meldNa: function (input) {
+    const FV = 'LEGACY_CALC_MELD_NA_v105_DOUBLE_SODIUM_ADJUSTMENT_UNVERIFIED';
+    const sourceFields = ['bilirubinUmolL', 'sodiumMmolL', 'inr', 'creatinineUmolL', 'albuminGL', 'sex', 'onDialysis'];
+    const v = meld3Inputs(input);
+    if (!v) return notCalc(FV, sourceFields, meld3Missing(input), 'Bilirubin, sodium, INR, creatinine and albumin (all > 0) are required to calculate MELD-Na.');
+    const m3 = computeMeld3Raw(v, input.sex, input.onDialysis);
+    const mn = Math.round((m3 + 1.32 * (137 - v.na) - 0.033 * m3 * (137 - v.na)) * 10) / 10;
+    return calcResult(mn, FV, sourceFields, 'MELD-Na = MELD-3.0 with the classic 2016 sodium correction applied on top — NOT clinically verified (MELD-3.0 is already sodium-adjusted; this likely double-counts sodium). Ported faithfully from the legacy app, not silently fixed.');
+  },
+  albi: function (bili, alb) {
+    const FV = 'LEGACY_CALC_ALBI_v105';
+    const missing = [];
+    if (!(bili > 0)) missing.push('bilirubinUmolL');
+    if (!(alb > 0)) missing.push('albuminGL');
+    if (missing.length) return notCalc(FV, ['bilirubinUmolL', 'albuminGL'], missing, 'Bilirubin and albumin (both > 0) are required to calculate the ALBI score.');
+    const score = Math.log10(bili) * 0.66 + alb * -0.085;
+    const grade = score <= -2.6 ? 1 : score <= -1.39 ? 2 : 3;
+    return calcResult({ score: score, grade: grade }, FV, ['bilirubinUmolL', 'albuminGL'], 'ALBI score = (log10(bilirubin µmol/L) x 0.66) + (albumin g/L x -0.085). Grade 1 <= -2.60, Grade 2 <= -1.39, else Grade 3.');
+  },
+  bclc: function (input) {
+    const FV = 'LEGACY_BCLC_STAGE_2022_v105';
+    const sourceFields = ['tumourCount', 'largestDiameterCm', 'childPughGrade', 'ecogScore', 'pvtt', 'extrahepaticSpread'];
+    const ecog = input.ecogScore === null || input.ecogScore === undefined ? NaN : input.ecogScore;
+    const cp = (input.childPughGrade || '').toUpperCase();
+    const count = input.tumourCount || 0;
+    const largest = input.largestDiameterCm || 0;
+    const pvtt = (input.pvtt || '').toLowerCase();
+    const ehd = input.extrahepaticSpread || false;
+    const milan = isMilanEligible(count, largest, pvtt, ehd);
+    let stage = null;
+    if (cp === 'C' || ecog >= 4) stage = 'D';
+    else if (ehd || pvtt.indexOf('main') !== -1 || pvtt.indexOf('lobar') !== -1 || (!isNaN(ecog) && ecog >= 2)) stage = 'C';
+    else if ((cp === 'A' || cp === 'B') && count > 3) stage = 'B';
+    else if ((cp === 'A' || cp === 'B') && !(count === 1 && largest <= 2) && !milan) stage = 'B';
+    else if ((cp === 'A' || cp === 'B') && ((count === 1 && largest <= 2 && !pvtt) || (milan && cp === 'A'))) stage = 'A';
+    else if (cp === 'A' && count === 1 && largest <= 2 && !pvtt) stage = '0';
+    if (stage === null) {
+      const missingFields = sourceFields.filter(function (f) { return input[f] === null || input[f] === undefined; });
+      return notCalc(FV, sourceFields, missingFields, 'Insufficient data for BCLC 2022 staging — Child-Pugh grade, ECOG, tumour count/size, PVTT and extrahepatic spread status are all required by the decision cascade.');
+    }
+    return calcResult(stage, FV, sourceFields, 'BCLC 2022 staging cascade (Reig M et al. J Hepatol 2022;76:681-693), stage ' + stage + '.');
+  },
+  lungShunt: function (pct) {
+    const FV = 'LEGACY_CALC_LUNG_RISK_v105';
+    if (!(pct > 0)) return notCalc(FV, ['lungShuntFractionPercent'], ['lungShuntFractionPercent'], 'Lung shunt fraction (%) is required.');
+    let band, explanation;
+    if (pct < 5) { band = 'LOW'; explanation = 'Low (<5%)'; }
+    else if (pct < 10) { band = 'BORDERLINE'; explanation = 'Borderline (5-10%)'; }
+    else if (pct < 15) { band = 'HIGH'; explanation = 'High (10-15%)'; }
+    else if (pct < 20) { band = 'VERY_HIGH'; explanation = 'Very High (15-20%)'; }
+    else { band = 'EXTREME'; explanation = 'Extreme - likely contraindication (>20%)'; }
+    return calcResult(band, FV, ['lungShuntFractionPercent'], explanation);
+  },
+};
+
+/* ============================== Episode status workflow (verbatim from apps/api/src/episodes/episode-status-transitions.ts) ============================== */
+const EPISODE_TRANSITIONS = {
+  REFERRED: ['AWAITING_MDT', 'CANCELLED', 'NOT_SUITABLE', 'DEFERRED'],
+  AWAITING_MDT: ['MDT_APPROVED', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  MDT_APPROVED: ['CLINIC_ASSESSMENT_COMPLETED', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  CLINIC_ASSESSMENT_COMPLETED: ['AWAITING_MAPPING', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  AWAITING_MAPPING: ['MAPPING_COMPLETED', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  MAPPING_COMPLETED: ['AWAITING_DOSIMETRY', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  AWAITING_DOSIMETRY: ['TREATMENT_APPROVED', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  TREATMENT_APPROVED: ['AWAITING_TREATMENT', 'NOT_SUITABLE', 'DEFERRED', 'CANCELLED'],
+  AWAITING_TREATMENT: ['TREATMENT_COMPLETED', 'CANCELLED', 'DEFERRED'],
+  TREATMENT_COMPLETED: ['EARLY_FOLLOW_UP'],
+  EARLY_FOLLOW_UP: ['IMAGING_FOLLOW_UP', 'LOST_TO_FOLLOW_UP'],
+  IMAGING_FOLLOW_UP: ['COMPLETED', 'LOST_TO_FOLLOW_UP'],
+  COMPLETED: [], CANCELLED: [], NOT_SUITABLE: [], LOST_TO_FOLLOW_UP: [], DEFERRED: [],
+};
+function isValidEpisodeTransition(from, to) { return (EPISODE_TRANSITIONS[from] || []).indexOf(to) !== -1; }
+
+/* ============================== Field configs ============================== */
+const PATIENT_FIELDS = [
+  { name: 'firstName', label: 'First name', type: 'text', required: true },
+  { name: 'lastName', label: 'Last name', type: 'text', required: true },
+  { name: 'dob', label: 'Date of birth', type: 'date', required: true },
+  { name: 'sex', label: 'Sex', type: 'select', options: SEX_OPTIONS },
+  { name: 'nhsNumber', label: 'NHS number', type: 'text' },
+  { name: 'mrn', label: 'MRN', type: 'text' },
+  { name: 'deceased', label: 'Deceased', type: 'checkbox' },
+  { name: 'dateOfDeath', label: 'Date of death', type: 'date' },
+];
+
+const DIAGNOSIS_FIELDS = [
+  { name: 'tumourType', label: 'Tumour type', type: 'select', options: VOCAB.DIAGNOSIS_TUMOUR_TYPE.options, required: true },
+  { name: 'aetiology', label: 'Aetiology', type: 'select', options: VOCAB.AETIOLOGY.options },
+  { name: 'tStage', label: 'T stage', type: 'text' },
+  { name: 'nStage', label: 'N stage', type: 'text' },
+  { name: 'mStage', label: 'M stage', type: 'text' },
+  { name: 'tumourCount', label: 'Tumour count', type: 'number' },
+  { name: 'largestDiameterCm', label: 'Largest lesion diameter (cm)', type: 'number', step: '0.1' },
+  { name: 'pvtt', label: 'Portal vein tumour thrombus', type: 'select', options: VOCAB.PVTT.options },
+  { name: 'extrahepaticSpread', label: 'Extrahepatic spread', type: 'checkbox' },
+  { name: 'liRads', label: 'LI-RADS', type: 'select', options: VOCAB.LIRADS.options },
+  { name: 'ecogScore', label: 'ECOG performance status (0-4)', type: 'number' },
+  { name: 'ascites', label: 'Ascites (e.g. none / mild / moderate)', type: 'text' },
+  { name: 'encephalopathy', label: 'Encephalopathy (e.g. none / grade 1-2 / grade 3-4)', type: 'text' },
+  { name: 'heightCm', label: 'Height (cm)', type: 'number', step: '0.1' },
+  { name: 'weightKg', label: 'Weight (kg)', type: 'number', step: '0.1' },
+  { name: 'bilirubinUmolL', label: 'Bilirubin (µmol/L)', type: 'number', step: '0.1' },
+  { name: 'albuminGL', label: 'Albumin (g/L)', type: 'number', step: '0.1' },
+  { name: 'inr', label: 'INR', type: 'number', step: '0.01' },
+  { name: 'creatinineUmolL', label: 'Creatinine (µmol/L)', type: 'number', step: '0.1' },
+  { name: 'sodiumMmolL', label: 'Sodium (mmol/L)', type: 'number', step: '0.1' },
+  { name: 'onDialysis', label: 'On dialysis', type: 'checkbox' },
+  { name: 'childPughGradeConfirmed', label: 'Child-Pugh grade — confirmed override', type: 'select', options: [{ code: 'A', label: 'A' }, { code: 'B', label: 'B' }, { code: 'C', label: 'C' }] },
+  { name: 'childPughOverrideReason', label: 'Reason for Child-Pugh override (required if set, min 10 chars)', type: 'textarea' },
+  { name: 'bclcStageConfirmed', label: 'BCLC stage — confirmed override', type: 'select', options: ['0', 'A', 'B', 'C', 'D'].map(function (s) { return { code: s, label: s }; }) },
+  { name: 'bclcOverrideReason', label: 'Reason for BCLC override (required if set, min 10 chars)', type: 'textarea' },
+];
+
+const RESOURCE_DEFS = {
+  lesions: {
+    label: 'Lesion', plural: 'Lesions',
+    fields: [
+      { name: 'segment', label: 'Segment / location', type: 'text', required: true },
+      { name: 'laterality', label: 'Laterality', type: 'select', options: LATERALITY_OPTIONS },
+      { name: 'sizeCm', label: 'Size (largest diameter, cm)', type: 'number', step: '0.1' },
+      { name: 'liRads', label: 'LI-RADS', type: 'select', options: VOCAB.LIRADS.options },
+      { name: 'notes', label: 'Notes', type: 'textarea' },
+    ],
+    columns: [['segment', 'Segment'], ['laterality', 'Laterality'], ['sizeCm', 'Size (cm)'], ['liRads', 'LI-RADS']],
+  },
+  followUp: {
+    label: 'Follow-up visit', plural: 'Follow-up visits',
+    fields: [
+      { name: 'date', label: 'Follow-up date', type: 'date', required: true },
+      { name: 'lesionId', label: 'Lesion (blank = all disease)', type: 'select', optionsFrom: 'lesions' },
+      { name: 'imagingModality', label: 'Imaging modality', type: 'text' },
+      { name: 'response', label: 'Response (mRECIST)', type: 'select', options: RESPONSE_OPTIONS },
+      { name: 'reildGrade', label: 'REILD grade', type: 'select', options: VOCAB.REILD_GRADE.options },
+      { name: 'notes', label: 'Notes', type: 'textarea' },
+    ],
+    columns: [['date', 'Date'], ['lesionId', 'Lesion'], ['response', 'Response'], ['reildGrade', 'REILD']],
+  },
+  toxicity: {
+    label: 'Toxicity event', plural: 'Toxicity events',
+    fields: [
+      { name: 'date', label: 'Date', type: 'date', required: true },
+      { name: 'ctcaeGrade', label: 'CTCAE grade', type: 'select', options: [1, 2, 3, 4, 5].map(function (n) { return { code: String(n), label: 'Grade ' + n }; }) },
+      { name: 'description', label: 'Description', type: 'textarea', required: true },
+      { name: 'resolved', label: 'Resolved', type: 'checkbox' },
+      { name: 'resolvedDate', label: 'Resolved date', type: 'date' },
+    ],
+    columns: [['date', 'Date'], ['ctcaeGrade', 'Grade'], ['description', 'Description'], ['resolved', 'Resolved']],
+  },
+};
+
+const MAPPING_FIELDS = [
+  { name: 'date', label: 'Mapping date', type: 'date', required: true },
+  { name: 'accessRoute', label: 'Access route', type: 'text' },
+  { name: 'michelsAnatomy', label: 'Hepatic arterial anatomy (Michels)', type: 'select', options: VOCAB.MICHELS_ANATOMY.options },
+  { name: 'embolicMaterialMapping', label: 'Embolic material', type: 'select', options: VOCAB.EMBOLIC_MATERIAL_MAPPING.options },
+  { name: 'dapGyCm2', label: 'DAP (Gy·cm²)', type: 'number', step: '0.01' },
+  { name: 'fluoroTimeMin', label: 'Fluoroscopy time (min)', type: 'number', step: '0.1' },
+  { name: 'maaLungShuntFractionPercent', label: 'MAA study — lung shunt fraction (%)', type: 'number', step: '0.1' },
+  { name: 'maaActivityInjectedMBq', label: 'MAA study — activity injected (MBq)', type: 'number', step: '0.1' },
+  { name: 'notes', label: 'Notes', type: 'textarea' },
+];
+
+const DOSIMETRY_FIELDS = [
+  { name: 'date', label: 'Planning date', type: 'date', required: true },
+  { name: 'planningModel', label: 'Planning model', type: 'select', options: VOCAB.PLANNING_MODEL.options },
+  { name: 'particleProduct', label: 'Microsphere product', type: 'select', options: VOCAB.PARTICLE_PRODUCT.options },
+  { name: 'targetVolumeCm3', label: 'Target volume (cm³)', type: 'number', step: '0.1' },
+  { name: 'calculatedActivityGBq', label: 'Calculated activity (GBq)', type: 'number', step: '0.01' },
+  { name: 'confirmedActivityGBq', label: 'Confirmed activity (GBq) — leave blank to accept calculated', type: 'number', step: '0.01' },
+  { name: 'activityOverrideReason', label: 'Reason for confirmed activity (required if set, min 10 chars)', type: 'textarea' },
+  { name: 'notes', label: 'Notes', type: 'textarea' },
+];
+
+const TREATMENT_FIELDS = [
+  { name: 'date', label: 'Treatment date', type: 'date', required: true },
+  { name: 'dosimetryPlanId', label: 'Dosimetry plan used', type: 'select', optionsFrom: 'dosimetry' },
+  { name: 'particleProduct', label: 'Microsphere product', type: 'select', options: VOCAB.PARTICLE_PRODUCT.options },
+  { name: 'embolicMaterialTreatment', label: 'Embolic material', type: 'select', options: VOCAB.EMBOLIC_MATERIAL_TREATMENT.options },
+  { name: 'activityDeliveredGBq', label: 'Activity delivered (GBq)', type: 'number', step: '0.01' },
+  { name: 'dapGyCm2', label: 'DAP (Gy·cm²)', type: 'number', step: '0.01' },
+  { name: 'fluoroTimeMin', label: 'Fluoroscopy time (min)', type: 'number', step: '0.1' },
+  { name: 'notes', label: 'Notes', type: 'textarea' },
+  { name: 'dosimetryOverrideReason', label: 'Reason for proceeding without an approved dosimetry plan (required only if no approved plan selected, min 10 chars)', type: 'textarea' },
+];
+
+const OUTCOME_FIELDS = [
+  { name: 'outcomeStatus', label: 'Outcome status', type: 'select', options: VOCAB.OUTCOME_STATUS.options, required: true },
+  { name: 'progressionReason', label: 'Progression reason (if applicable)', type: 'select', options: VOCAB.PROGRESSION_REASON.options },
+  { name: 'progressionDate', label: 'Progression date', type: 'date' },
+  { name: 'notes', label: 'Notes', type: 'textarea' },
+];
+
+/* ============================== Data layer (localStorage) ============================== */
+const DB_KEY = 'rlh_sirt_registry_v2';
+function loadDb() {
+  const raw = localStorage.getItem(DB_KEY);
+  if (!raw) return { schemaVersion: 2, patients: [] };
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.patients)) return { schemaVersion: 2, patients: [] };
+    return parsed;
+  } catch (e) { return { schemaVersion: 2, patients: [] }; }
+}
+function saveDb() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+let db = loadDb();
+let ui = { patientSearch: '', editing: null, restoreFocusSearch: false };
+
+function getEpisode(id) {
+  for (let i = 0; i < db.patients.length; i++) {
+    const p = db.patients[i];
+    const e = p.episodes.find(function (e) { return e.id === id; });
+    if (e) return { patient: p, episode: e };
+  }
+  return null;
+}
+function logTimeline(episode, action, detail) {
+  episode.timeline = episode.timeline || [];
+  episode.timeline.push({ id: uid(), ts: nowIso(), actor: getActorName(), action: action, detail: detail || '' });
+}
+function recalcDiagnosis(patient, episode) {
+  const d = episode.diagnosis;
+  if (!d) return;
+  const age = CALC.age(patient.dob, null);
+  const bmi = CALC.bmi(d.heightCm, d.weightKg);
+  const bsa = CALC.bsa(d.heightCm, d.weightKg);
+  const cp = CALC.childPugh(d.bilirubinUmolL, d.albuminGL, d.inr, d.ascites, d.encephalopathy);
+  const meldInput = { bilirubinUmolL: d.bilirubinUmolL, sodiumMmolL: d.sodiumMmolL, inr: d.inr, creatinineUmolL: d.creatinineUmolL, albuminGL: d.albuminGL, sex: patient.sex, onDialysis: d.onDialysis };
+  const meld3 = CALC.meld3(meldInput);
+  const meldNa = CALC.meldNa(meldInput);
+  const albi = CALC.albi(d.bilirubinUmolL, d.albuminGL);
+  const cpGradeForBclc = d.childPughGradeConfirmed || (cp.status === 'CALCULATED' ? cp.value.grade : null);
+  const bclc = CALC.bclc({ tumourCount: d.tumourCount, largestDiameterCm: d.largestDiameterCm, childPughGrade: cpGradeForBclc, ecogScore: d.ecogScore, pvtt: d.pvtt, extrahepaticSpread: d.extrahepaticSpread });
+  d.calculated = { age: age, bmi: bmi, bsa: bsa, childPugh: cp, meld3: meld3, meldNa: meldNa, albi: albi, bclc: bclc, calculatedAt: nowIso() };
+}
+
+/* ============================== Form-building helpers ============================== */
+function inputField(label, name, value, opts) {
+  opts = opts || {};
+  const type = opts.type || 'text';
+  const req = opts.required ? '<span class="required">*</span>' : '';
+  if (type === 'textarea') {
+    return '<label class="field"><span>' + esc(label) + req + '</span><textarea name="' + esc(name) + '" ' + (opts.required ? 'required' : '') + '>' + esc(value == null ? '' : value) + '</textarea></label>';
+  }
+  if (type === 'checkbox') {
+    return '<label class="field" style="flex-direction:row;align-items:center;gap:6px;"><input type="checkbox" name="' + esc(name) + '" ' + (value ? 'checked' : '') + '/> <span>' + esc(label) + '</span></label>';
+  }
+  const stepAttr = opts.step ? (' step="' + esc(opts.step) + '"') : '';
+  return '<label class="field"><span>' + esc(label) + req + '</span><input type="' + type + '" name="' + esc(name) + '" value="' + esc(value == null ? '' : value) + '" ' + (opts.required ? 'required' : '') + stepAttr + ' /></label>';
+}
+function selectField(label, name, value, options, opts) {
+  opts = opts || {};
+  const req = opts.required ? '<span class="required">*</span>' : '';
+  const optHtml = ['<option value="">-- select --</option>'].concat((options || []).map(function (o) {
+    return '<option value="' + esc(o.code) + '" ' + (String(o.code) === String(value) ? 'selected' : '') + '>' + esc(o.label) + '</option>';
+  })).join('');
+  return '<label class="field"><span>' + esc(label) + req + '</span><select name="' + esc(name) + '" ' + (opts.required ? 'required' : '') + '>' + optHtml + '</select></label>';
+}
+function renderFormField(f, value, episode) {
+  if (f.type === 'select') {
+    let options = f.options;
+    if (f.optionsFrom === 'lesions') options = ((episode && episode.lesions) || []).map(function (l) { return { code: l.id, label: l.segment + (l.sizeCm ? (' (' + l.sizeCm + ' cm)') : '') }; });
+    if (f.optionsFrom === 'dosimetry') options = ((episode && episode.dosimetry) || []).map(function (p) { return { code: p.id, label: (p.date || '') + ' — ' + (p.approved ? 'Approved' : 'Not approved') }; });
+    return selectField(f.label, f.name, value, options, { required: f.required });
+  }
+  if (f.type === 'checkbox') return inputField(f.label, f.name, value, { type: 'checkbox' });
+  if (f.type === 'textarea') return inputField(f.label, f.name, value, { type: 'textarea', required: f.required });
+  return inputField(f.label, f.name, value, { type: f.type, required: f.required, step: f.step });
+}
+function formatVal(episode, def, fieldName, value) {
+  const f = def.fields.find(function (x) { return x.name === fieldName; });
+  if (!f) return value == null ? '' : value;
+  if (f.type === 'checkbox') return value ? 'Yes' : 'No';
+  if (f.type === 'select') {
+    if (f.optionsFrom === 'lesions') {
+      if (!value) return 'All disease';
+      const l = (episode.lesions || []).find(function (x) { return x.id === value; });
+      return l ? l.segment : '(deleted lesion)';
+    }
+    const options = f.options || [];
+    const o = options.find(function (o) { return o.code === value; });
+    return o ? o.label : (value || '');
+  }
+  return value == null ? '' : value;
+}
+function describeItem(key, item) { return item.date || item.segment || item.description || item.id; }
+function calcRow(label, result, formatter, unverified) {
+  if (!result) return '';
+  const statusBadge = result.status === 'CALCULATED' ? '<span class="badge badge-success">calculated</span>' : '<span class="badge badge-block">not calculable</span>';
+  const val = result.status === 'CALCULATED' ? (formatter ? formatter(result.value) : result.value) : '—';
+  return '<tr><td><b>' + esc(label) + '</b>' + (unverified ? ' <span class="badge badge-warning">unverified formula</span>' : '') + '</td>' +
+    '<td>' + esc(String(val)) + '</td><td>' + statusBadge + '</td>' +
+    '<td class="muted" style="font-size:12px;">' + esc(result.explanation) + '</td></tr>';
+}
+
+/* ============================== Views ============================== */
+function viewPatientsList() {
+  const q = (ui.patientSearch || '').toLowerCase();
+  const patients = db.patients.filter(function (p) {
+    return !q || ((p.firstName || '') + ' ' + (p.lastName || '') + ' ' + (p.nhsNumber || '') + ' ' + (p.mrn || '')).toLowerCase().indexOf(q) !== -1;
+  }).sort(function (a, b) { return (a.lastName || '').localeCompare(b.lastName || ''); });
+  const rows = patients.length ? patients.map(function (p) {
+    return '<tr><td><a href="#/patients/' + p.id + '">' + esc(p.lastName) + ', ' + esc(p.firstName) + '</a></td>' +
+      '<td>' + esc(p.dob || '') + '</td><td>' + esc(p.nhsNumber || '') + '</td><td>' + esc(p.mrn || '') + '</td>' +
+      '<td>' + p.episodes.length + '</td></tr>';
+  }).join('') : '<tr><td colspan="5" class="muted">No patients found.</td></tr>';
+  return '<div class="top-context"><h1>Patients</h1></div>' +
+    '<div class="card">' +
+    '<input type="search" id="patient-search-input" placeholder="Search by name, NHS number or MRN..." value="' + esc(ui.patientSearch || '') + '" oninput="App.searchPatients(this.value)" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid var(--color-border);border-radius:4px;font-family:inherit;" />' +
+    '<table><thead><tr><th>Name</th><th>DOB</th><th>NHS number</th><th>MRN</th><th>Episodes</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '</div>' +
+    '<div class="card"><h3>Add patient</h3><form onsubmit="return App.submitPatient(event)"><div class="form-grid">' +
+    PATIENT_FIELDS.map(function (f) { return renderFormField(f, '', null); }).join('') +
+    '</div><button type="submit" class="primary">Create patient</button></form></div>';
+}
+
+function viewPatientDetail(id) {
+  const patient = db.patients.find(function (p) { return p.id === id; });
+  if (!patient) return '<div class="card notice notice-error">Patient not found.</div>';
+  const episodes = patient.episodes.slice().sort(function (a, b) { return b.episodeNumber - a.episodeNumber; });
+  const rows = episodes.length ? episodes.map(function (e) {
+    return '<tr><td>#' + e.episodeNumber + '</td><td>' + esc(e.firstOrRepeat) + '</td><td><span class="badge badge-status">' + esc(e.status) + '</span></td>' +
+      '<td>' + esc(e.referralDate || '') + '</td><td>' + esc(new Date(e.updatedAt).toLocaleDateString()) + '</td>' +
+      '<td><a href="#/episodes/' + e.id + '"><button type="button">Open</button></a></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="muted">No episodes yet.</td></tr>';
+  return '<a href="#/patients">&larr; Back to patients</a>' +
+    '<div class="top-context"><h1>' + esc(patient.firstName) + ' ' + esc(patient.lastName) + '</h1>' +
+    '<div class="meta">DOB ' + esc(patient.dob || '') + ' · ' + esc(patient.sex || '') +
+    (patient.nhsNumber ? (' · NHS ' + esc(patient.nhsNumber)) : '') + (patient.mrn ? (' · MRN ' + esc(patient.mrn)) : '') +
+    (patient.deceased ? ' · <b>Deceased</b>' : '') + '</div></div>' +
+    '<div class="card"><h3>Episodes</h3><table><thead><tr><th>#</th><th>Type</th><th>Status</th><th>Referral</th><th>Last updated</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<button type="button" class="primary" style="margin-top:10px;" onclick="App.createEpisode(\'' + patient.id + '\')">+ New episode' + (episodes.length ? ' (repeat treatment)' : '') + '</button>' +
+    '</div>' +
+    '<div class="card"><h3>Patient details</h3><form onsubmit="return App.submitPatient(event)"><input type="hidden" name="id" value="' + patient.id + '" /><div class="form-grid">' +
+    PATIENT_FIELDS.map(function (f) { return renderFormField(f, patient[f.name], null); }).join('') +
+    '</div><div class="list-item-actions"><button type="submit" class="primary">Save</button>' +
+    (episodes.length === 0 ? '<button type="button" class="danger" onclick="App.deletePatient(\'' + patient.id + '\')">Delete patient</button>' : '') +
+    '</div></form></div>';
+}
+
+function renderOverviewTab(patient, episode) {
+  const transitionOptions = EPISODE_TRANSITIONS[episode.status] || [];
+  const prevEpisode = episode.previousEpisodeId ? patient.episodes.find(function (e) { return e.id === episode.previousEpisodeId; }) : null;
+  return '<div class="top-context"><div><h1>Episode #' + episode.episodeNumber + ' <span class="badge badge-status">' + esc(episode.firstOrRepeat) + '</span></h1>' +
+    '<div class="meta">' + esc(patient.firstName) + ' ' + esc(patient.lastName) + ' · DOB ' + esc(patient.dob || '') + ' · Referral ' + esc(episode.referralDate || '—') + '</div></div>' +
+    '<div><span class="badge badge-status">' + esc(episode.status) + '</span></div></div>' +
+    (prevEpisode ? '<p class="notice notice-info">Linked to previous episode #' + prevEpisode.episodeNumber + ' — this treatment\'s data is kept fully separate; repeat SIRT never overwrites the prior episode\'s data.</p>' : '') +
+    '<div class="card"><h3>Status</h3>' +
+    '<p>Current status: <b>' + esc(episode.status) + '</b>' + (episode.status === 'DEFERRED' && episode.deferredFromStatus ? (' (deferred from ' + esc(episode.deferredFromStatus) + ')') : '') + '</p>' +
+    '<p class="muted" style="font-size:12px;">Readiness: outcome recorded — ' + ((episode.outcome && episode.outcome.outcomeStatus) ? 'Yes' : 'No') + '; treatment session recorded — ' + ((episode.treatment && episode.treatment.length) ? 'Yes' : 'No') + '.</p>' +
+    (episode.status === 'DEFERRED'
+      ? '<button type="button" class="primary" onclick="App.resumeEpisode(\'' + episode.id + '\')">Resume (back to ' + esc(episode.deferredFromStatus || 'previous status') + ')</button>'
+      : (transitionOptions.length
+        ? '<form onsubmit="return App.transitionEpisode(\'' + episode.id + '\',event)" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">' +
+          selectField('Transition to', 'toStatus', '', transitionOptions.map(function (s) { return { code: s, label: s }; }), { required: true }) +
+          inputField('Reason (required for some transitions)', 'reason', '', { type: 'text' }) +
+          '<button type="submit" class="primary">Transition</button></form>'
+        : '<p class="muted">No further transitions available from this status.</p>')) +
+    '<button type="button" style="margin-top:10px;" onclick="App.duplicateEpisode(\'' + episode.id + '\')">Duplicate as new episode (repeat treatment)</button>' +
+    '</div>' +
+    '<div class="card"><h3>Episode administration</h3><form onsubmit="return App.submitEpisodeAdmin(\'' + episode.id + '\',event)"><div class="form-grid">' +
+    inputField('Referral date', 'referralDate', episode.referralDate, { type: 'date' }) +
+    '</div><button type="submit" class="primary">Save</button></form></div>';
+}
+
+function renderDiagnosisPanel(patient, episode) {
+  const d = episode.diagnosis;
+  const formHtml = '<div class="card"><h3>' + (d ? 'Diagnosis &amp; staging' : 'Create diagnosis') + '</h3>' +
+    '<form onsubmit="return App.submitDiagnosis(\'' + episode.id + '\',event)"><div class="form-grid">' +
+    DIAGNOSIS_FIELDS.map(function (f) { return renderFormField(f, d ? d[f.name] : '', episode); }).join('') +
+    '</div><button type="submit" class="primary">' + (d ? 'Save &amp; recalculate' : 'Create diagnosis') + '</button></form></div>';
+  if (!d) return formHtml;
+  const c = d.calculated;
+  const calcHtml = c ? (
+    '<div class="card"><h3>Calculated results <span class="muted" style="font-weight:400;">(as of ' + esc(new Date(c.calculatedAt).toLocaleString()) + ')</span></h3>' +
+    '<table><tbody>' +
+    calcRow('Age', c.age) +
+    calcRow('BMI', c.bmi, function (v) { return v.bmi.toFixed(1) + ' (' + v.category + ')'; }) +
+    calcRow('BSA (Mosteller)', c.bsa, function (v) { return v.toFixed(2) + ' m²'; }) +
+    calcRow('Child-Pugh', c.childPugh, function (v) { return 'Score ' + v.score + ' — Grade ' + v.grade + ' (' + v.componentsUsed + '/5 components)'; }) +
+    calcRow('MELD-3.0', c.meld3) +
+    calcRow('MELD-Na', c.meldNa, null, true) +
+    calcRow('ALBI', c.albi, function (v) { return 'Score ' + v.score.toFixed(2) + ' — Grade ' + v.grade; }) +
+    calcRow('BCLC 2022 stage', c.bclc) +
+    '</tbody></table>' +
+    (d.childPughGradeConfirmed ? ('<p class="notice notice-info">Child-Pugh grade confirmed as <b>' + esc(d.childPughGradeConfirmed) + '</b> (override reason: ' + esc(d.childPughOverrideReason || '') + ')</p>') : '') +
+    (d.bclcStageConfirmed ? ('<p class="notice notice-info">BCLC stage confirmed as <b>' + esc(d.bclcStageConfirmed) + '</b> (override reason: ' + esc(d.bclcOverrideReason || '') + ')</p>') : '') +
+    '</div>'
+  ) : '<div class="card muted">No calculated results yet — save the diagnosis form to calculate.</div>';
+  return formHtml + calcHtml;
+}
+
+function renderResourcePanel(episode, key) {
+  const def = RESOURCE_DEFS[key];
+  const list = episode[key] || [];
+  const editing = (ui.editing && ui.editing.episodeId === episode.id && ui.editing.key === key) ? list.find(function (i) { return i.id === ui.editing.id; }) : null;
+  const rows = list.length ? list.map(function (item) {
+    return '<tr>' + def.columns.map(function (c) { return '<td>' + esc(formatVal(episode, def, c[0], item[c[0]])) + '</td>'; }).join('') +
+      '<td class="list-item-actions"><button type="button" onclick="App.editResource(\'' + episode.id + '\',\'' + key + '\',\'' + item.id + '\')">Edit</button>' +
+      '<button type="button" class="danger" onclick="App.deleteResource(\'' + episode.id + '\',\'' + key + '\',\'' + item.id + '\')">Delete</button></td></tr>';
+  }).join('') : ('<tr><td colspan="' + (def.columns.length + 1) + '" class="muted">None recorded yet.</td></tr>');
+  return '<div class="card"><h3>' + esc(def.plural) + '</h3><table><thead><tr>' +
+    def.columns.map(function (c) { return '<th>' + esc(c[1]) + '</th>'; }).join('') + '<th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="card"><h3>' + (editing ? ('Edit ' + esc(def.label)) : ('Add ' + esc(def.label))) + '</h3>' +
+    '<form onsubmit="return App.submitResource(\'' + episode.id + '\',\'' + key + '\',event)"><input type="hidden" name="id" value="' + (editing ? editing.id : '') + '" /><div class="form-grid">' +
+    def.fields.map(function (f) { return renderFormField(f, editing ? editing[f.name] : '', episode); }).join('') +
+    '</div><button type="submit" class="primary">' + (editing ? 'Save changes' : ('Add ' + esc(def.label))) + '</button>' +
+    (editing ? '<button type="button" onclick="App.cancelEditResource()">Cancel</button>' : '') + '</form></div>';
+}
+
+function renderMappingPanel(episode) {
+  const list = episode.mapping || [];
+  const editing = (ui.editing && ui.editing.episodeId === episode.id && ui.editing.key === 'mapping') ? list.find(function (i) { return i.id === ui.editing.id; }) : null;
+  const rows = list.length ? list.map(function (item) {
+    const risk = item.maaLungShuntFractionPercent ? CALC.lungShunt(item.maaLungShuntFractionPercent) : null;
+    return '<tr><td>' + esc(item.date || '') + '</td><td>' + esc(labelFor(VOCAB.MICHELS_ANATOMY, item.michelsAnatomy)) + '</td>' +
+      '<td>' + esc(labelFor(VOCAB.EMBOLIC_MATERIAL_MAPPING, item.embolicMaterialMapping)) + '</td>' +
+      '<td>' + (item.maaLungShuntFractionPercent != null ? item.maaLungShuntFractionPercent : '') +
+      (risk && risk.status === 'CALCULATED' ? (' <span class="badge badge-' + riskBadgeClass(risk.value) + '">' + risk.value + '</span>') : '') + '</td>' +
+      '<td class="list-item-actions"><button type="button" onclick="App.editResource(\'' + episode.id + '\',\'mapping\',\'' + item.id + '\')">Edit</button>' +
+      '<button type="button" class="danger" onclick="App.deleteResource(\'' + episode.id + '\',\'mapping\',\'' + item.id + '\')">Delete</button></td></tr>';
+  }).join('') : '<tr><td colspan="5" class="muted">No mapping sessions recorded yet.</td></tr>';
+  return '<div class="card"><h3>Mapping sessions (incl. MAA study)</h3><table><thead><tr><th>Date</th><th>Anatomy</th><th>Embolic material</th><th>Lung shunt %</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="card"><h3>' + (editing ? 'Edit mapping session' : 'Add mapping session') + '</h3>' +
+    '<form onsubmit="return App.submitMapping(\'' + episode.id + '\',event)"><input type="hidden" name="id" value="' + (editing ? editing.id : '') + '" /><div class="form-grid">' +
+    MAPPING_FIELDS.map(function (f) { return renderFormField(f, editing ? editing[f.name] : '', episode); }).join('') +
+    '</div><button type="submit" class="primary">' + (editing ? 'Save changes' : 'Add mapping session') + '</button>' +
+    (editing ? '<button type="button" onclick="App.cancelEditResource()">Cancel</button>' : '') + '</form></div>';
+}
+
+function renderDosimetryPanel(episode) {
+  const list = episode.dosimetry || [];
+  const editing = (ui.editing && ui.editing.episodeId === episode.id && ui.editing.key === 'dosimetry') ? list.find(function (i) { return i.id === ui.editing.id; }) : null;
+  const rows = list.length ? list.map(function (item) {
+    return '<tr><td>' + esc(item.date || '') + '</td><td>' + esc(labelFor(VOCAB.PLANNING_MODEL, item.planningModel)) + '</td>' +
+      '<td>' + esc(labelFor(VOCAB.PARTICLE_PRODUCT, item.particleProduct)) + '</td>' +
+      '<td>' + (item.calculatedActivityGBq != null ? item.calculatedActivityGBq : '') + '</td>' +
+      '<td>' + (item.confirmedActivityGBq != null ? item.confirmedActivityGBq : '<span class="muted">(uses calculated)</span>') + '</td>' +
+      '<td>' + (item.approved ? '<span class="badge badge-success">Approved</span>' : '<span class="badge badge-warning">Not approved</span>') + '</td>' +
+      '<td class="list-item-actions">' + (item.approved
+        ? ('<button type="button" onclick="App.unlockDosimetry(\'' + episode.id + '\',\'' + item.id + '\')">Unlock</button>')
+        : ('<button type="button" onclick="App.editResource(\'' + episode.id + '\',\'dosimetry\',\'' + item.id + '\')">Edit</button>' +
+          '<button type="button" onclick="App.approveDosimetry(\'' + episode.id + '\',\'' + item.id + '\')">Approve</button>' +
+          '<button type="button" class="danger" onclick="App.deleteResource(\'' + episode.id + '\',\'dosimetry\',\'' + item.id + '\')">Delete</button>')) +
+      '</td></tr>';
+  }).join('') : '<tr><td colspan="7" class="muted">No dosimetry plans recorded yet.</td></tr>';
+  return '<div class="card"><h3>Dosimetry plans</h3><table><thead><tr><th>Date</th><th>Model</th><th>Product</th><th>Calculated GBq</th><th>Confirmed GBq</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="card"><h3>' + (editing ? 'Edit dosimetry plan' : 'Add dosimetry plan') + '</h3>' +
+    '<form onsubmit="return App.submitDosimetry(\'' + episode.id + '\',event)"><input type="hidden" name="id" value="' + (editing ? editing.id : '') + '" /><div class="form-grid">' +
+    DOSIMETRY_FIELDS.map(function (f) { return renderFormField(f, editing ? editing[f.name] : '', episode); }).join('') +
+    '</div><button type="submit" class="primary">' + (editing ? 'Save changes' : 'Add dosimetry plan') + '</button>' +
+    (editing ? '<button type="button" onclick="App.cancelEditResource()">Cancel</button>' : '') + '</form></div>';
+}
+
+function renderTreatmentCard(episode, item) {
+  const plan = (episode.dosimetry || []).find(function (p) { return p.id === item.dosimetryPlanId; });
+  const injRows = (item.doseInjections || []).length ? item.doseInjections.map(function (inj) {
+    const lesion = (episode.lesions || []).find(function (l) { return l.id === inj.lesionId; });
+    return '<tr><td>' + esc(lesion ? lesion.segment : '(unspecified)') + '</td><td>' + esc(inj.feederDescription || '') + '</td><td>' + (inj.activityGBq != null ? inj.activityGBq : '') + '</td>' +
+      '<td><button type="button" class="danger" onclick="App.deleteDoseInjection(\'' + episode.id + '\',\'' + item.id + '\',\'' + inj.id + '\')">Delete</button></td></tr>';
+  }).join('') : '<tr><td colspan="4" class="muted">No per-lesion dose injections recorded.</td></tr>';
+  return '<div class="card"><h3>Treatment ' + esc(item.date || '') + ' ' +
+    (plan ? (plan.approved ? '<span class="badge badge-success">approved plan</span>' : '<span class="badge badge-warning">plan not approved</span>') : '<span class="badge badge-warning">no plan linked</span>') + '</h3>' +
+    '<p class="muted">' + esc(labelFor(VOCAB.PARTICLE_PRODUCT, item.particleProduct)) + ' · ' + (item.activityDeliveredGBq != null ? item.activityDeliveredGBq : '?') + ' GBq delivered · ' + esc(labelFor(VOCAB.EMBOLIC_MATERIAL_TREATMENT, item.embolicMaterialTreatment)) + '</p>' +
+    '<div class="list-item-actions" style="margin-bottom:10px;"><button type="button" onclick="App.editResource(\'' + episode.id + '\',\'treatment\',\'' + item.id + '\')">Edit</button>' +
+    '<button type="button" class="danger" onclick="App.deleteResource(\'' + episode.id + '\',\'treatment\',\'' + item.id + '\')">Delete</button></div>' +
+    '<table><thead><tr><th>Lesion</th><th>Feeder</th><th>Activity (GBq)</th><th></th></tr></thead><tbody>' + injRows + '</tbody></table>' +
+    '<form onsubmit="return App.submitDoseInjection(\'' + episode.id + '\',\'' + item.id + '\',event)" style="margin-top:10px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">' +
+    selectField('Lesion', 'lesionId', '', (episode.lesions || []).map(function (l) { return { code: l.id, label: l.segment }; })) +
+    inputField('Feeder description', 'feederDescription', '') +
+    inputField('Activity (GBq)', 'activityGBq', '', { type: 'number', step: '0.01' }) +
+    '<button type="submit" class="primary">Add injection</button></form></div>';
+}
+
+function renderTreatmentPanel(episode) {
+  const list = episode.treatment || [];
+  const editing = (ui.editing && ui.editing.episodeId === episode.id && ui.editing.key === 'treatment') ? list.find(function (i) { return i.id === ui.editing.id; }) : null;
+  const cards = list.length ? list.map(function (item) { return renderTreatmentCard(episode, item); }).join('') : '<div class="card muted">No treatment sessions recorded yet.</div>';
+  return cards + '<div class="card"><h3>' + (editing ? 'Edit treatment session' : 'Add treatment session') + '</h3>' +
+    '<form onsubmit="return App.submitTreatment(\'' + episode.id + '\',event)"><input type="hidden" name="id" value="' + (editing ? editing.id : '') + '" /><div class="form-grid">' +
+    TREATMENT_FIELDS.map(function (f) { return renderFormField(f, editing ? editing[f.name] : '', episode); }).join('') +
+    '</div><button type="submit" class="primary">' + (editing ? 'Save changes' : 'Add treatment session') + '</button>' +
+    (editing ? '<button type="button" onclick="App.cancelEditResource()">Cancel</button>' : '') + '</form></div>';
+}
+
+function renderOutcomePanel(episode) {
+  const o = episode.outcome;
+  return '<div class="card"><h3>Episode outcome</h3><form onsubmit="return App.submitOutcome(\'' + episode.id + '\',event)"><div class="form-grid">' +
+    OUTCOME_FIELDS.map(function (f) { return renderFormField(f, o ? o[f.name] : '', episode); }).join('') +
+    '</div><button type="submit" class="primary">' + (o ? 'Save changes' : 'Record outcome') + '</button></form></div>';
+}
+
+function renderTimelineTab(episode) {
+  const items = (episode.timeline || []).slice().sort(function (a, b) { return b.ts.localeCompare(a.ts); });
+  return '<div class="card"><h3>Timeline / audit trail</h3><ul class="timeline">' +
+    (items.length ? items.map(function (t) {
+      return '<li><b>' + esc(new Date(t.ts).toLocaleString()) + '</b> — ' + esc(t.actor || 'unknown') + ' — <b>' + esc(t.action) + '</b>' + (t.detail ? (': ' + esc(t.detail)) : '') + '</li>';
+    }).join('') : '<li class="muted">No activity recorded yet.</li>') + '</ul></div>';
+}
+
+function viewEpisodeDetail(id, tab) {
+  const found = getEpisode(id);
+  if (!found) return '<div class="card notice notice-error">Episode not found.</div>';
+  const patient = found.patient, episode = found.episode;
+  const tabs = [['overview', 'Overview'], ['diagnosis', 'Diagnosis & staging'], ['lesions', 'Lesions'], ['mapping', 'Mapping'], ['dosimetry', 'Dosimetry'], ['treatment', 'Treatment'], ['followup', 'Follow-up'], ['toxicity', 'Toxicity'], ['outcome', 'Outcome'], ['timeline', 'Timeline']];
+  const active = tab || 'overview';
+  const tabNav = '<div class="tabs">' + tabs.map(function (t) {
+    return '<a href="#/episodes/' + episode.id + '/' + t[0] + '"><button type="button" class="' + (active === t[0] ? 'active' : '') + '">' + esc(t[1]) + '</button></a>';
+  }).join('') + '</div>';
+  let body;
+  switch (active) {
+    case 'diagnosis': body = renderDiagnosisPanel(patient, episode); break;
+    case 'lesions': body = renderResourcePanel(episode, 'lesions'); break;
+    case 'mapping': body = renderMappingPanel(episode); break;
+    case 'dosimetry': body = renderDosimetryPanel(episode); break;
+    case 'treatment': body = renderTreatmentPanel(episode); break;
+    case 'followup': body = renderResourcePanel(episode, 'followUp'); break;
+    case 'toxicity': body = renderResourcePanel(episode, 'toxicity'); break;
+    case 'outcome': body = renderOutcomePanel(episode); break;
+    case 'timeline': body = renderTimelineTab(episode); break;
+    default: body = renderOverviewTab(patient, episode);
+  }
+  return '<a href="#/patients/' + patient.id + '">&larr; Back to ' + esc(patient.firstName) + ' ' + esc(patient.lastName) + '</a>' + tabNav + body;
+}
+
+/* ============================== Router ============================== */
+function parseRoute() {
+  const raw = (location.hash || '#/patients').slice(1);
+  const parts = raw.split('/').filter(Boolean);
+  if (parts[0] === 'patients' && parts[1]) return { name: 'patientDetail', id: parts[1] };
+  if (parts[0] === 'episodes' && parts[1]) return { name: 'episodeDetail', id: parts[1], tab: parts[2] };
+  return { name: 'patients' };
+}
+function render() {
+  const route = parseRoute();
+  let body;
+  if (route.name === 'patientDetail') body = viewPatientDetail(route.id);
+  else if (route.name === 'episodeDetail') body = viewEpisodeDetail(route.id, route.tab);
+  else body = viewPatientsList();
+  document.getElementById('app').innerHTML = body;
+  const searchEl = document.getElementById('patient-search-input');
+  if (searchEl && ui.restoreFocusSearch) {
+    searchEl.focus();
+    const pos = searchEl.value.length;
+    try { searchEl.setSelectionRange(pos, pos); } catch (e) { /* ignore */ }
+  }
+  ui.restoreFocusSearch = false;
+}
+
+/* ============================== App actions ============================== */
+const App = {
+  setActorName: function (v) { localStorage.setItem('rlh_actor_name', v); },
+
+  exportBackup: function () {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rlh-sirt-registry-backup-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+  importBackup: function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || !Array.isArray(parsed.patients)) throw new Error('Not a valid registry backup file.');
+        if (!confirm('Importing will REPLACE all data currently in this browser with the contents of the backup file. Continue?')) return;
+        db = parsed;
+        saveDb();
+        alert('Backup imported successfully.');
+        location.hash = '#/patients';
+        render();
+      } catch (e) {
+        alert('Import failed: ' + e.message);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  },
+
+  searchPatients: function (v) { ui.patientSearch = v; ui.restoreFocusSearch = true; render(); },
+
+  submitPatient: function (event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const id = fdStr(data, 'id');
+    const nhsNumber = (fdStr(data, 'nhsNumber') || '').trim();
+    if (nhsNumber) {
+      const dup = db.patients.find(function (p) { return p.nhsNumber && p.nhsNumber === nhsNumber && p.id !== id; });
+      if (dup && !confirm('A patient with this NHS number already exists: ' + dup.firstName + ' ' + dup.lastName + '. Continue anyway?')) return false;
+    }
+    const patient = id ? db.patients.find(function (p) { return p.id === id; }) : { id: uid(), createdAt: nowIso(), episodes: [] };
+    for (let i = 0; i < PATIENT_FIELDS.length; i++) {
+      const f = PATIENT_FIELDS[i];
+      patient[f.name] = f.type === 'checkbox' ? fdBool(data, f.name) : fdStr(data, f.name);
+    }
+    patient.updatedAt = nowIso();
+    if (!id) db.patients.push(patient);
+    saveDb();
+    if (!id) location.hash = '#/patients/' + patient.id; else render();
+    return false;
+  },
+  deletePatient: function (id) {
+    const patient = db.patients.find(function (p) { return p.id === id; });
+    if (!patient) return;
+    if (patient.episodes.length) { alert('Cannot delete a patient with existing episodes — clinical episode data is never discarded.'); return; }
+    if (!confirm('Delete patient ' + patient.firstName + ' ' + patient.lastName + '? This cannot be undone.')) return;
+    db.patients = db.patients.filter(function (p) { return p.id !== id; });
+    saveDb();
+    location.hash = '#/patients';
+  },
+
+  createEpisode: function (patientId) {
+    const patient = db.patients.find(function (p) { return p.id === patientId; });
+    if (!patient) return;
+    const existing = patient.episodes;
+    const episodeNumber = existing.length ? Math.max.apply(null, existing.map(function (e) { return e.episodeNumber; })) + 1 : 1;
+    const prev = existing.length ? existing.slice().sort(function (a, b) { return b.episodeNumber - a.episodeNumber; })[0] : null;
+    const episode = {
+      id: uid(), episodeNumber: episodeNumber,
+      firstOrRepeat: prev ? 'REPEAT' : 'FIRST',
+      previousEpisodeId: prev ? prev.id : null,
+      status: 'REFERRED',
+      referralDate: new Date().toISOString().slice(0, 10),
+      createdAt: nowIso(), updatedAt: nowIso(),
+      diagnosis: null, lesions: [], mapping: [], dosimetry: [], treatment: [], followUp: [], toxicity: [], outcome: null,
+      timeline: [],
+    };
+    if (episode.firstOrRepeat === 'REPEAT' && !episode.previousEpisodeId) { alert('Internal error: repeat episode missing link to previous episode — aborted.'); return; }
+    patient.episodes.push(episode);
+    logTimeline(episode, 'EPISODE_CREATED', 'Episode #' + episodeNumber + ' (' + episode.firstOrRepeat + ')');
+    saveDb();
+    location.hash = '#/episodes/' + episode.id;
+  },
+  duplicateEpisode: function (episodeId) {
+    const found = getEpisode(episodeId);
+    if (!found) return;
+    const patient = found.patient, episode = found.episode;
+    if (!confirm('Create a new repeat episode linked to episode #' + episode.episodeNumber + '? No clinical data (lesions, mapping, dosimetry, treatment, follow-up) is copied — only that this is a repeat treatment.')) return;
+    const episodeNumber = Math.max.apply(null, patient.episodes.map(function (e) { return e.episodeNumber; })) + 1;
+    const ne = {
+      id: uid(), episodeNumber: episodeNumber, firstOrRepeat: 'REPEAT', previousEpisodeId: episode.id,
+      status: 'REFERRED', referralDate: new Date().toISOString().slice(0, 10),
+      createdAt: nowIso(), updatedAt: nowIso(),
+      diagnosis: null, lesions: [], mapping: [], dosimetry: [], treatment: [], followUp: [], toxicity: [], outcome: null,
+      timeline: [],
+    };
+    patient.episodes.push(ne);
+    logTimeline(ne, 'EPISODE_CREATED', 'Episode #' + episodeNumber + ' (REPEAT, duplicated from #' + episode.episodeNumber + ')');
+    saveDb();
+    location.hash = '#/episodes/' + ne.id;
+  },
+  submitEpisodeAdmin: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    found.episode.referralDate = fdStr(data, 'referralDate');
+    found.episode.updatedAt = nowIso();
+    saveDb(); render(); return false;
+  },
+  transitionEpisode: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const to = fdStr(data, 'toStatus');
+    const reason = (fdStr(data, 'reason') || '').trim();
+    const found = getEpisode(episodeId);
+    if (!found || !to) return false;
+    const episode = found.episode;
+    const from = episode.status;
+    if (!isValidEpisodeTransition(from, to)) { alert('Invalid transition: ' + from + ' → ' + to); return false; }
+    const blocks = [];
+    if (to === 'COMPLETED' && !(episode.outcome && episode.outcome.outcomeStatus)) blocks.push('Episode outcome must be recorded before marking COMPLETED.');
+    if (to === 'TREATMENT_COMPLETED' && !(episode.treatment && episode.treatment.length)) blocks.push('At least one treatment session must be recorded before marking TREATMENT_COMPLETED.');
+    if (blocks.length) { alert('Cannot transition:\n- ' + blocks.join('\n- ')); return false; }
+    if (to === 'DEFERRED') episode.deferredFromStatus = from;
+    episode.status = to;
+    episode.updatedAt = nowIso();
+    logTimeline(episode, 'STATUS_TRANSITION', from + ' → ' + to + (reason ? (' (reason: ' + reason + ')') : ''));
+    saveDb(); render(); return false;
+  },
+  resumeEpisode: function (episodeId) {
+    const found = getEpisode(episodeId);
+    if (!found) return;
+    const episode = found.episode;
+    if (episode.status !== 'DEFERRED' || !episode.deferredFromStatus) return;
+    const from = episode.status;
+    episode.status = episode.deferredFromStatus;
+    logTimeline(episode, 'RESUMED', from + ' → ' + episode.status);
+    episode.deferredFromStatus = null;
+    episode.updatedAt = nowIso();
+    saveDb(); render();
+  },
+
+  submitDiagnosis: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const patient = found.patient, episode = found.episode;
+    const cpOverride = fdStr(data, 'childPughGradeConfirmed');
+    const cpReason = (fdStr(data, 'childPughOverrideReason') || '').trim();
+    if (cpOverride && cpReason.length < 10) { alert('Child-Pugh override requires a reason of at least 10 characters.'); return false; }
+    const bclcOverride = fdStr(data, 'bclcStageConfirmed');
+    const bclcReason = (fdStr(data, 'bclcOverrideReason') || '').trim();
+    if (bclcOverride && bclcReason.length < 10) { alert('BCLC override requires a reason of at least 10 characters.'); return false; }
+    const isNew = !episode.diagnosis;
+    const d = episode.diagnosis || { id: uid(), createdAt: nowIso() };
+    for (let i = 0; i < DIAGNOSIS_FIELDS.length; i++) {
+      const f = DIAGNOSIS_FIELDS[i];
+      if (f.type === 'checkbox') d[f.name] = fdBool(data, f.name);
+      else if (f.type === 'number') d[f.name] = fdNum(data, f.name);
+      else d[f.name] = fdStr(data, f.name);
+    }
+    d.updatedAt = nowIso();
+    episode.diagnosis = d;
+    recalcDiagnosis(patient, episode);
+    episode.updatedAt = nowIso();
+    logTimeline(episode, isNew ? 'DIAGNOSIS_CREATED' : 'DIAGNOSIS_UPDATED', labelFor(VOCAB.DIAGNOSIS_TUMOUR_TYPE, d.tumourType));
+    saveDb(); render(); return false;
+  },
+
+  editResource: function (episodeId, key, id) { ui.editing = { episodeId: episodeId, key: key, id: id }; render(); },
+  cancelEditResource: function () { ui.editing = null; render(); },
+  deleteResource: function (episodeId, key, id) {
+    if (!confirm('Delete this record? This cannot be undone.')) return;
+    const found = getEpisode(episodeId);
+    if (!found) return;
+    const episode = found.episode;
+    episode[key] = (episode[key] || []).filter(function (i) { return i.id !== id; });
+    episode.updatedAt = nowIso();
+    logTimeline(episode, key.toUpperCase() + '_DELETED', id);
+    if (ui.editing && ui.editing.id === id) ui.editing = null;
+    saveDb(); render();
+  },
+  submitResource: function (episodeId, key, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const episode = found.episode;
+    const def = RESOURCE_DEFS[key];
+    const id = fdStr(data, 'id');
+    const item = id ? episode[key].find(function (i) { return i.id === id; }) : { id: uid(), createdAt: nowIso() };
+    for (let i = 0; i < def.fields.length; i++) {
+      const f = def.fields[i];
+      if (f.type === 'checkbox') item[f.name] = fdBool(data, f.name);
+      else if (f.type === 'number') item[f.name] = fdNum(data, f.name);
+      else item[f.name] = fdStr(data, f.name);
+    }
+    item.updatedAt = nowIso();
+    if (!id) { episode[key].push(item); logTimeline(episode, key.toUpperCase() + '_ADDED', describeItem(key, item)); }
+    else logTimeline(episode, key.toUpperCase() + '_UPDATED', describeItem(key, item));
+    episode.updatedAt = nowIso();
+    ui.editing = null;
+    saveDb(); render(); return false;
+  },
+
+  submitMapping: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const episode = found.episode;
+    const id = fdStr(data, 'id');
+    const item = id ? episode.mapping.find(function (i) { return i.id === id; }) : { id: uid(), createdAt: nowIso() };
+    for (let i = 0; i < MAPPING_FIELDS.length; i++) {
+      const f = MAPPING_FIELDS[i];
+      item[f.name] = f.type === 'number' ? fdNum(data, f.name) : fdStr(data, f.name);
+    }
+    item.updatedAt = nowIso();
+    if (!id) { episode.mapping.push(item); logTimeline(episode, 'MAPPING_ADDED', item.date || ''); }
+    else logTimeline(episode, 'MAPPING_UPDATED', item.date || '');
+    episode.updatedAt = nowIso();
+    ui.editing = null; saveDb(); render(); return false;
+  },
+
+  submitDosimetry: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const episode = found.episode;
+    const id = fdStr(data, 'id');
+    const confAct = fdNum(data, 'confirmedActivityGBq');
+    const reason = (fdStr(data, 'activityOverrideReason') || '').trim();
+    if (confAct !== null && reason.length < 10) { alert('Setting a confirmed activity requires an override reason of at least 10 characters.'); return false; }
+    const item = id ? episode.dosimetry.find(function (i) { return i.id === id; }) : { id: uid(), createdAt: nowIso() };
+    if (item.approved) { alert('This plan is approved and locked. Unlock it first to make changes.'); return false; }
+    for (let i = 0; i < DOSIMETRY_FIELDS.length; i++) {
+      const f = DOSIMETRY_FIELDS[i];
+      item[f.name] = f.type === 'number' ? fdNum(data, f.name) : fdStr(data, f.name);
+    }
+    item.updatedAt = nowIso();
+    if (!id) { episode.dosimetry.push(item); logTimeline(episode, 'DOSIMETRY_ADDED', item.date || ''); }
+    else logTimeline(episode, 'DOSIMETRY_UPDATED', item.date || '');
+    episode.updatedAt = nowIso();
+    ui.editing = null; saveDb(); render(); return false;
+  },
+  approveDosimetry: function (episodeId, planId) {
+    const found = getEpisode(episodeId);
+    if (!found) return;
+    const episode = found.episode;
+    const plan = episode.dosimetry.find(function (p) { return p.id === planId; });
+    if (!plan) return;
+    const by = getActorName();
+    plan.approved = true; plan.approvedBy = by; plan.approvedAt = nowIso();
+    episode.updatedAt = nowIso();
+    logTimeline(episode, 'DOSIMETRY_APPROVED', 'Plan ' + (plan.date || '') + ' approved by ' + by);
+    saveDb(); render();
+  },
+  unlockDosimetry: function (episodeId, planId) {
+    const reason = prompt('Reason for unlocking this approved plan (minimum 10 characters):');
+    if (reason === null) return;
+    if (reason.trim().length < 10) { alert('A reason of at least 10 characters is required.'); return; }
+    const found = getEpisode(episodeId);
+    if (!found) return;
+    const episode = found.episode;
+    const plan = episode.dosimetry.find(function (p) { return p.id === planId; });
+    if (!plan) return;
+    plan.approved = false; plan.approvedBy = null; plan.approvedAt = null;
+    episode.updatedAt = nowIso();
+    logTimeline(episode, 'DOSIMETRY_UNLOCKED', 'Plan ' + (plan.date || '') + ' unlocked (reason: ' + reason.trim() + ')');
+    saveDb(); render();
+  },
+
+  submitTreatment: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const episode = found.episode;
+    const id = fdStr(data, 'id');
+    const planId = fdStr(data, 'dosimetryPlanId');
+    const plan = planId ? episode.dosimetry.find(function (p) { return p.id === planId; }) : null;
+    const overrideReason = (fdStr(data, 'dosimetryOverrideReason') || '').trim();
+    if (!plan || !plan.approved) {
+      if (overrideReason.length < 10) { alert('No approved dosimetry plan is selected. Proceeding requires a reason (min 10 characters) in the override field.'); return false; }
+    }
+    const item = id ? episode.treatment.find(function (i) { return i.id === id; }) : { id: uid(), createdAt: nowIso(), doseInjections: [] };
+    for (let i = 0; i < TREATMENT_FIELDS.length; i++) {
+      const f = TREATMENT_FIELDS[i];
+      item[f.name] = f.type === 'number' ? fdNum(data, f.name) : fdStr(data, f.name);
+    }
+    item.doseInjections = item.doseInjections || [];
+    item.updatedAt = nowIso();
+    const warn = (!plan || !plan.approved) ? (' [WARNING OVERRIDE: no approved dosimetry plan — ' + overrideReason + ']') : '';
+    if (!id) { episode.treatment.push(item); logTimeline(episode, 'TREATMENT_ADDED', (item.date || '') + warn); }
+    else logTimeline(episode, 'TREATMENT_UPDATED', (item.date || '') + warn);
+    episode.updatedAt = nowIso();
+    ui.editing = null; saveDb(); render(); return false;
+  },
+  submitDoseInjection: function (episodeId, sessionId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const episode = found.episode;
+    const session = episode.treatment.find(function (t) { return t.id === sessionId; });
+    if (!session) return false;
+    const inj = { id: uid(), lesionId: fdStr(data, 'lesionId'), feederDescription: fdStr(data, 'feederDescription'), activityGBq: fdNum(data, 'activityGBq') };
+    session.doseInjections = session.doseInjections || [];
+    session.doseInjections.push(inj);
+    episode.updatedAt = nowIso();
+    logTimeline(episode, 'DOSE_INJECTION_ADDED', 'Session ' + (session.date || ''));
+    saveDb(); render(); return false;
+  },
+  deleteDoseInjection: function (episodeId, sessionId, injId) {
+    const found = getEpisode(episodeId);
+    if (!found) return;
+    const episode = found.episode;
+    const session = episode.treatment.find(function (t) { return t.id === sessionId; });
+    if (!session) return;
+    session.doseInjections = (session.doseInjections || []).filter(function (i) { return i.id !== injId; });
+    episode.updatedAt = nowIso();
+    logTimeline(episode, 'DOSE_INJECTION_DELETED', 'Session ' + (session.date || ''));
+    saveDb(); render();
+  },
+
+  submitOutcome: function (episodeId, event) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const found = getEpisode(episodeId);
+    if (!found) return false;
+    const episode = found.episode;
+    const isNew = !episode.outcome;
+    const o = episode.outcome || { id: uid(), createdAt: nowIso() };
+    for (let i = 0; i < OUTCOME_FIELDS.length; i++) o[OUTCOME_FIELDS[i].name] = fdStr(data, OUTCOME_FIELDS[i].name);
+    o.updatedAt = nowIso();
+    episode.outcome = o;
+    episode.updatedAt = nowIso();
+    logTimeline(episode, isNew ? 'OUTCOME_RECORDED' : 'OUTCOME_UPDATED', o.outcomeStatus || '');
+    saveDb(); render(); return false;
+  },
+};
+
+document.getElementById('actor-name-input').value = getActorName();
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>
