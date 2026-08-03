@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { DIAGNOSIS_TUMOUR_TYPE } from '../src/vocabularies/seed-data/diagnosis-tumour-type';
 import { AETIOLOGY } from '../src/vocabularies/seed-data/aetiology';
 import { PVTT } from '../src/vocabularies/seed-data/pvtt';
@@ -31,7 +32,29 @@ const VOCABULARIES = [
   MDT_DECISION,
 ];
 
+// Bootstrap-only: without at least one user, nobody can log in to create
+// further users (POST /users requires ADMIN). Configurable via env so a
+// real deployment isn't stuck with this literal default password —
+// override SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD before seeding anywhere
+// beyond local dev.
+async function seedAdminUser(): Promise<void> {
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@rlh-registry.local';
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    console.log(`Admin user '${email}' already exists, skipping.`);
+    return;
+  }
+  const password = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!';
+  const passwordHash = await bcrypt.hash(password, 12);
+  // createdById is left null: this account is a system bootstrap, not created by another user.
+  await prisma.user.create({
+    data: { email, passwordHash, firstName: 'Registry', lastName: 'Administrator', role: 'ADMIN', isActive: true },
+  });
+  console.log(`Seeded admin user '${email}' — CHANGE THIS PASSWORD before any real deployment.`);
+}
+
 async function main(): Promise<void> {
+  await seedAdminUser();
   for (const vocab of VOCABULARIES) {
     await prisma.vocabulary.upsert({
       where: { key: vocab.key },
