@@ -1,0 +1,38 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MICHELS_ANATOMY = void 0;
+// Verbatim from the legacy app's #dl-vascularAnatomy datalist (line ~3293),
+// 24 options: the 12-item Michels classification plus 12 "Unclassified: ..." variants.
+exports.MICHELS_ANATOMY = {
+    key: 'MICHELS_ANATOMY',
+    label: 'Hepatic arterial anatomy (Michels classification)',
+    options: [
+        { code: 'I', label: 'I: Standard anatomy' },
+        { code: 'II', label: 'II: Replaced LHA from LGA' },
+        { code: 'III', label: 'III: Replaced RHA from SMA' },
+        { code: 'IV', label: 'IV: Replaced RHA and LHA' },
+        { code: 'V', label: 'V: Accessory LHA from LGA' },
+        { code: 'VI', label: 'VI: Accessory RHA from SMA' },
+        { code: 'VII', label: 'VII: Accessory RHA and LHA' },
+        { code: 'VIII', label: 'VIII: Accessory RHA or LHA and replaced LHA or RHA' },
+        { code: 'IX', label: 'IX: CHA replaced to SMA' },
+        { code: 'X', label: 'X: CHA replaced to LGA' },
+        { code: 'XI', label: 'XI: CHA from SMA + accessory LHA from LGA' },
+        { code: 'XII', label: 'XII: CHA originates directly from aorta' },
+        { code: 'UNCLASSIFIED_CHA_SEPARATE_AORTA', label: 'Unclassified: CHA separate origin from aorta' },
+        { code: 'UNCLASSIFIED_DOUBLE_HA', label: 'Unclassified: Double hepatic artery' },
+        { code: 'UNCLASSIFIED_PHA_SMA_GDA_AORTA', label: 'Unclassified: PHA replaced to SMA; GDA origin from aorta' },
+        { code: 'UNCLASSIFIED_SEPARATE_LGA_RHA_LHA', label: 'Unclassified: Separate origin of LGA, RHA and LHA from aorta' },
+        { code: 'UNCLASSIFIED_REPLACED_CHA', label: 'Unclassified: Replaced CHA' },
+        { code: 'UNCLASSIFIED_EARLY_SEPARATE_RHA', label: 'Unclassified: Early separate origin of right hepatic artery' },
+        { code: 'UNCLASSIFIED_LT_RT_GA_CELIAC', label: 'Unclassified: Lt and Rt GA from Celiac' },
+        { code: 'UNCLASSIFIED_RT_IPA_LT_GA', label: 'Unclassified: Rt IPA from Lt GA' },
+        { code: 'UNCLASSIFIED_CHA_SEPARATE_AORTA_COMMON_SMA_SPLENIC', label: 'Unclassified: CHA separate origin from aorta and common origin of SMA and splenic artery' },
+        { code: 'UNCLASSIFIED_REPLACED_LHA_LT_IPA', label: 'Unclassified: Replaced LHA and Lt IPA from LHA' },
+        { code: 'UNCLASSIFIED_TRIFURCATION_CHA_GDA_SPLENIC', label: 'Unclassified: Trifurcation of CHA, GDA and splenic artery' },
+        { code: 'UNCLASSIFIED_TRIFURCATION_RHA_GDA_SPLENIC_REPLACED_LHA', label: 'Unclassified: Trifurcation of RHA, GDA and splenic artery with replaced LHA' },
+        { code: 'UNCLASSIFIED_RHA_AORTA_REPLACED_LHA', label: 'Unclassified: RHA from aorta and replaced LHA' },
+        { code: 'UNCLASSIFIED_REPLACED_RHA_LHA_MIDDLE_HA', label: 'Unclassified: Replaced RHA from SMA, replaced LHA from LGA and middle HA from proper HA' },
+        { code: 'UNCLASSIFIED_LGA_AORTA_NOT_CELIAC', label: 'Unclassified: LGA from aorta not from celiac' },
+    ],
+};

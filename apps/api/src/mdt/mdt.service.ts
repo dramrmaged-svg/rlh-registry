@@ -53,8 +53,8 @@ async function reReadOrThrow(tx: PrismaTx, id: string): Promise<RawMdtRecord> {
 export class MdtService {
   constructor(private readonly prisma: PrismaService, private readonly auditService: AuditService) {}
 
-  async listForPatient(patientId: string, callerRole: string): Promise<MdtRecordDto[]> {
-    const records = await this.prisma.mdtRecord.findMany({ where: { patientId }, ...MDT_RECORD_QUERY, orderBy: { createdAt: 'desc' } });
+  async listForEpisode(episodeId: string, callerRole: string): Promise<MdtRecordDto[]> {
+    const records = await this.prisma.mdtRecord.findMany({ where: { episodeId }, ...MDT_RECORD_QUERY, orderBy: { createdAt: 'desc' } });
     return records.map((r) => toMdtRecordDto(r, callerRole));
   }
 
@@ -64,21 +64,21 @@ export class MdtService {
     return toMdtRecordDto(record, callerRole);
   }
 
-  async create(patientId: string, dto: CreateMdtRecordDto, currentUser: UserResponseDto, request: Request): Promise<MdtRecordDto> {
-    const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
-    if (!patient) throwNotFound('Patient', patientId);
+  async create(episodeId: string, dto: CreateMdtRecordDto, currentUser: UserResponseDto, request: Request): Promise<MdtRecordDto> {
+    const episode = await this.prisma.episode.findUnique({ where: { id: episodeId } });
+    if (!episode) throwNotFound('Episode', episodeId);
     const session = await this.prisma.mdtSession.findUnique({ where: { id: dto.mdtSessionId } });
     if (!session) throwNotFound('MdtSession', dto.mdtSessionId);
     try {
       const record = await this.prisma.withinTransaction(async (tx) => {
-        const latestScore = await tx.clinicalScore.findFirst({ where: { patientId }, orderBy: { scoreDate: 'desc' } });
-        const latestLab = await tx.labPanel.findFirst({ where: { patientId, submittedAt: { not: null } }, orderBy: { collectedAt: 'desc' } });
+        const latestScore = await tx.clinicalScore.findFirst({ where: { episodeId }, orderBy: { scoreDate: 'desc' } });
+        const latestLab = await tx.labPanel.findFirst({ where: { episodeId, submittedAt: { not: null } }, orderBy: { collectedAt: 'desc' } });
         let snapshotId: string | null = null;
         if (latestScore) {
-          const snapshot = await tx.clinicalSnapshot.create({ data: { patientId, snapshotDate: new Date(), snapshotContext: 'MDT_REVIEW', clinicalScoreId: latestScore.id, labPanelId: latestLab?.id ?? null, ecogScore: latestScore.ecogScore, cpGrade: latestScore.cpGrade, cpTotalScore: latestScore.cpTotalScore, meldNaScore: latestScore.meldNaScore, meldNaScoreRounded: latestScore.meldNaScoreRounded, albiGrade: latestScore.albiGrade, albiScore: latestScore.albiScore, bclcStage: latestScore.bclcStage, bsaM2: latestScore.bsaM2, weightKg: latestScore.weightKg, calculationVersion: latestScore.calculationVersion, createdById: currentUser.id } });
+          const snapshot = await tx.clinicalSnapshot.create({ data: { episodeId, snapshotDate: new Date(), snapshotContext: 'MDT_REVIEW', clinicalScoreId: latestScore.id, labPanelId: latestLab?.id ?? null, ecogScore: latestScore.ecogScore, cpGrade: latestScore.cpGrade, cpTotalScore: latestScore.cpTotalScore, meld3Score: latestScore.meld3Score, meldNaScore: latestScore.meldNaScore, meldNaScoreRounded: latestScore.meldNaScoreRounded, albiGrade: latestScore.albiGrade, albiScore: latestScore.albiScore, bclcStage: latestScore.bclcStage, bsaM2: latestScore.bsaM2, weightKg: latestScore.weightKg, calculationVersion: latestScore.calculationVersion, createdById: currentUser.id } });
           snapshotId = snapshot.id;
         }
-        const created = await tx.mdtRecord.create({ data: { patientId, mdtSessionId: dto.mdtSessionId, clinicalSnapshotId: snapshotId, diseaseSummary: dto.diseaseSummary ?? null, priorTreatmentSummary: dto.priorTreatmentSummary ?? null, decision: dto.decision as never ?? null, decisionDetail: dto.decisionDetail ?? null, decisionConditions: dto.decisionConditions ?? null, patientFitForProcedure: dto.patientFitForProcedure ?? null, performanceStatusAcceptable: dto.performanceStatusAcceptable ?? null, liverFunctionAcceptable: dto.liverFunctionAcceptable ?? null, tumourLoadAcceptable: dto.tumourLoadAcceptable ?? null, lockStatus: 'DRAFT', createdById: currentUser.id, updatedById: currentUser.id } });
+        const created = await tx.mdtRecord.create({ data: { episodeId, mdtSessionId: dto.mdtSessionId, clinicalSnapshotId: snapshotId, diseaseSummary: dto.diseaseSummary ?? null, priorTreatmentSummary: dto.priorTreatmentSummary ?? null, decision: dto.decision as never ?? null, decisionDetail: dto.decisionDetail ?? null, decisionConditions: dto.decisionConditions ?? null, patientFitForProcedure: dto.patientFitForProcedure ?? null, performanceStatusAcceptable: dto.performanceStatusAcceptable ?? null, liverFunctionAcceptable: dto.liverFunctionAcceptable ?? null, tumourLoadAcceptable: dto.tumourLoadAcceptable ?? null, lockStatus: 'DRAFT', createdById: currentUser.id, updatedById: currentUser.id } });
         await this.auditService.logInTx(tx, { eventType: 'CREATE', entityType: 'MdtRecord', entityId: created.id, userId: currentUser.id, roleAtTime: currentUser.role as Role, afterSnapshot: created as unknown as Record<string, unknown>, ipAddress: request.ip ?? null, userAgent: request.headers['user-agent'] ?? null, metadata: null });
         return created;
       }, 'read-committed');
@@ -86,7 +86,7 @@ export class MdtService {
       if (!fresh) throwNotFound('MdtRecord', record.id);
       return toMdtRecordDto(fresh, currentUser.role);
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') throw new ApiException(HttpStatus.CONFLICT, 'DUPLICATE_MDT_RECORD', 'An MDT record already exists for this patient and session.', { patientId, mdtSessionId: dto.mdtSessionId });
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') throw new ApiException(HttpStatus.CONFLICT, 'DUPLICATE_MDT_RECORD', 'An MDT record already exists for this episode and session.', { episodeId, mdtSessionId: dto.mdtSessionId });
       throw err;
     }
   }

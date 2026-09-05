@@ -43,11 +43,13 @@ __decorate([
     (0, class_transformer_1.Expose)(),
     __metadata("design:type", Boolean)
 ], IdentifierDto.prototype, "isActive", void 0);
+// Derived from the patient's most recent episode's Diagnosis (Diagnosis is
+// episode-scoped, not patient-scoped — see docs/adr/0001-episode-architecture.md).
 class DiagnosisSummaryDto {
     id;
     tumourType;
-    baselineBclcStage;
-    isPrimary;
+    bclcStage;
+    episodeId;
 }
 __decorate([
     (0, class_transformer_1.Expose)(),
@@ -60,11 +62,11 @@ __decorate([
 __decorate([
     (0, class_transformer_1.Expose)(),
     __metadata("design:type", Object)
-], DiagnosisSummaryDto.prototype, "baselineBclcStage", void 0);
+], DiagnosisSummaryDto.prototype, "bclcStage", void 0);
 __decorate([
     (0, class_transformer_1.Expose)(),
-    __metadata("design:type", Boolean)
-], DiagnosisSummaryDto.prototype, "isPrimary", void 0);
+    __metadata("design:type", String)
+], DiagnosisSummaryDto.prototype, "episodeId", void 0);
 class PatientDetailDto {
     id;
     firstName;

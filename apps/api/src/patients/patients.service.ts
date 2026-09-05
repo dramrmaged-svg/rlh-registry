@@ -21,6 +21,28 @@ function decodeCursor(cursor: string): CursorData | null { try { return JSON.par
 function toDetailDto(patient: Record<string, unknown>): PatientDetailDto { return plainToInstance(PatientDetailDto, patient, { excludeExtraneousValues: true }); }
 function toSummaryDto(patient: Record<string, unknown>): PatientSummaryDto { return plainToInstance(PatientSummaryDto, patient, { excludeExtraneousValues: true }); }
 
+interface EpisodeWithDiagnosis {
+  id: string;
+  diagnosis: { id: string; tumourType: string; calculatedBclcStage: string | null; confirmedBclcStage: string | null } | null;
+}
+
+// Diagnosis moved to episode-scoped (see docs/adr/0001-episode-architecture.md)
+// — there is no single patient-level diagnosis anymore. "Primary diagnosis"
+// for list/detail display is derived from the most recent episode's
+// Diagnosis, preferring the clinician-confirmed BCLC stage over the
+// calculated one.
+function extractPrimaryDiagnosis(episodes: EpisodeWithDiagnosis[] | undefined): { id: string; episodeId: string; tumourType: string; bclcStage: string | null } | null {
+  const latest = episodes?.[0];
+  if (!latest?.diagnosis) return null;
+  return { id: latest.diagnosis.id, episodeId: latest.id, tumourType: latest.diagnosis.tumourType, bclcStage: latest.diagnosis.confirmedBclcStage ?? latest.diagnosis.calculatedBclcStage ?? null };
+}
+
+const LATEST_EPISODE_DIAGNOSIS_INCLUDE = {
+  orderBy: { episodeNumber: 'desc' as const },
+  take: 1,
+  include: { diagnosis: { select: { id: true, tumourType: true, calculatedBclcStage: true, confirmedBclcStage: true } } },
+};
+
 @Injectable()
 export class PatientsService {
   constructor(private readonly prisma: PrismaService, private readonly auditService: AuditService) {}
@@ -40,18 +62,18 @@ export class PatientsService {
         where['OR'] = [{ [sortBy]: { [op]: decoded.sortValue } }, { [sortBy]: { equals: decoded.sortValue }, id: { [op]: decoded.id } }];
       }
     }
-    const patients = await this.prisma.patient.findMany({ where, take: limit + 1, orderBy: [{ [sortBy]: sortOrder }, { id: sortOrder }], include: { identifiers: { where: { isPrimary: true, isActive: true }, take: 1 }, diagnoses: { where: { isPrimary: true }, take: 1 } } });
+    const patients = await this.prisma.patient.findMany({ where, take: limit + 1, orderBy: [{ [sortBy]: sortOrder }, { id: sortOrder }], include: { identifiers: { where: { isPrimary: true, isActive: true }, take: 1 }, episodes: LATEST_EPISODE_DIAGNOSIS_INCLUDE } });
     const hasMore = patients.length > limit;
     const page = hasMore ? patients.slice(0, limit) : patients;
     const lastItem = page[page.length - 1];
     const nextCursor = hasMore && lastItem ? encodeCursor({ sortValue: String(lastItem[sortBy as keyof typeof lastItem] ?? ''), id: lastItem.id }) : null;
-    return { data: page.map((p) => toSummaryDto({ ...p, primaryDiagnosis: (p.diagnoses as Array<{ tumourType: string; baselineBclcStage: string | null }>)?.[0] ?? null, primaryIdentifier: (p.identifiers as Array<{ identifierType: string; value: string; isActive: boolean }>)?.[0] ?? null, lastMdtDecision: null, lastProcedureDate: null })), pagination: { limit, nextCursor, hasMore } };
+    return { data: page.map((p) => toSummaryDto({ ...p, primaryDiagnosis: extractPrimaryDiagnosis(p.episodes as EpisodeWithDiagnosis[]), primaryIdentifier: (p.identifiers as Array<{ identifierType: string; value: string; isActive: boolean }>)?.[0] ?? null, lastMdtDecision: null, lastProcedureDate: null })), pagination: { limit, nextCursor, hasMore } };
   }
 
   async getById(id: string): Promise<PatientDetailDto> {
-    const patient = await this.prisma.patient.findUnique({ where: { id }, include: { identifiers: { where: { isActive: true } }, diagnoses: { where: { isPrimary: true }, take: 1 } } });
+    const patient = await this.prisma.patient.findUnique({ where: { id }, include: { identifiers: { where: { isActive: true } }, episodes: LATEST_EPISODE_DIAGNOSIS_INCLUDE } });
     if (!patient) throwNotFound('Patient', id);
-    return toDetailDto({ ...patient, primaryDiagnosis: (patient.diagnoses as Array<{ id: string; tumourType: string; baselineBclcStage: string | null; isPrimary: boolean }>)?.[0] ?? null });
+    return toDetailDto({ ...patient, primaryDiagnosis: extractPrimaryDiagnosis(patient.episodes as EpisodeWithDiagnosis[]) });
   }
 
   async create(dto: CreatePatientDto, currentUser: UserResponseDto, request: Request) {
@@ -72,7 +94,7 @@ export class PatientsService {
       if (!tokenResult) throw new ApiException(HttpStatus.BAD_REQUEST, 'DUPLICATE_CONFIRMATION_TOKEN_INVALID', 'Confirmation token is invalid, expired, or does not match the submitted patient data.');
     }
     const patient = await this.prisma.withinTransaction(async (tx) => {
-      const created = await tx.patient.create({ data: { firstName: dto.firstName, lastName: dto.lastName, dateOfBirth: new Date(dto.dateOfBirth), sex: dto.sex as never, ethnicity: dto.ethnicity ?? null, gpPractice: dto.gpPractice ?? null, referringHospital: dto.referringHospital ?? null, createdById: currentUser.id, updatedById: currentUser.id }, include: { identifiers: true, diagnoses: true } });
+      const created = await tx.patient.create({ data: { firstName: dto.firstName, lastName: dto.lastName, dateOfBirth: new Date(dto.dateOfBirth), sex: dto.sex as never, ethnicity: dto.ethnicity ?? null, gpPractice: dto.gpPractice ?? null, referringHospital: dto.referringHospital ?? null, createdById: currentUser.id, updatedById: currentUser.id }, include: { identifiers: true } });
       if (dto.primaryIdentifier) { await tx.patientIdentifier.create({ data: { patientId: created.id, identifierType: dto.primaryIdentifier.identifierType as never, value: dto.primaryIdentifier.value, issuingOrg: dto.primaryIdentifier.issuingOrg ?? null, isPrimary: true, isActive: true, createdById: currentUser.id } }); }
       await this.auditService.logInTx(tx, { eventType: 'CREATE', entityType: 'Patient', entityId: created.id, userId: currentUser.id, roleAtTime: currentUser.role as Role, afterSnapshot: created as unknown as Record<string, unknown>, metadata: dto.duplicateConfirmation ? { duplicateConfirmed: true, reviewedMatchCount: dto.duplicateConfirmation.reviewedMatchCount, confirmationNote: dto.duplicateConfirmation.confirmationNote } : null, ipAddress: request.ip ?? null, userAgent: request.headers['user-agent'] ?? null });
       return created;
@@ -91,7 +113,7 @@ export class PatientsService {
         if (current === null) throwNotFound('Patient', id);
         throwOptimisticLockConflict({ entityType: 'Patient', entityId: id, submittedVersion: dto.version, currentVersion: current.version });
       }
-      const fresh = await tx.patient.findUnique({ where: { id }, include: { identifiers: { where: { isActive: true } }, diagnoses: { where: { isPrimary: true }, take: 1 } } });
+      const fresh = await tx.patient.findUnique({ where: { id }, include: { identifiers: { where: { isActive: true } } } });
       if (!fresh) throwNotFound('Patient', id);
       await this.auditService.logInTx(tx, { eventType: 'UPDATE', entityType: 'Patient', entityId: id, userId: currentUser.id, roleAtTime: currentUser.role as Role, beforeSnapshot: existing as unknown as Record<string, unknown>, afterSnapshot: fresh as unknown as Record<string, unknown>, changedFields: buildChangedFields(existing as unknown as Record<string, unknown>, fresh as unknown as Record<string, unknown>, dto as unknown as Record<string, unknown>), ipAddress: request.ip ?? null, userAgent: request.headers['user-agent'] ?? null, metadata: null });
       return fresh;
@@ -101,8 +123,8 @@ export class PatientsService {
 
   private async findFuzzyMatches(lastName: string, dateOfBirth: string, nhsNumber?: string) {
     void nhsNumber;
-    const matches = await this.prisma.patient.findMany({ where: { dateOfBirth: new Date(dateOfBirth), lastName: { contains: lastName.slice(0, 4), mode: 'insensitive' }, isActive: true }, include: { identifiers: { where: { identifierType: 'NHS_NUMBER', isActive: true }, take: 1 }, diagnoses: { where: { isPrimary: true }, take: 1, select: { tumourType: true } } }, take: 5 });
-    return matches.map((m) => ({ lastName: m.lastName, dateOfBirth: m.dateOfBirth, nhsNumber: (m.identifiers as Array<{ value: string }>)?.[0]?.value ?? null, tumourType: (m.diagnoses as Array<{ tumourType: string }>)?.[0]?.tumourType ?? null }));
+    const matches = await this.prisma.patient.findMany({ where: { dateOfBirth: new Date(dateOfBirth), lastName: { contains: lastName.slice(0, 4), mode: 'insensitive' }, isActive: true }, include: { identifiers: { where: { identifierType: 'NHS_NUMBER', isActive: true }, take: 1 }, episodes: { orderBy: { episodeNumber: 'desc' }, take: 1, select: { diagnosis: { select: { tumourType: true } } } } }, take: 5 });
+    return matches.map((m) => ({ lastName: m.lastName, dateOfBirth: m.dateOfBirth, nhsNumber: (m.identifiers as Array<{ value: string }>)?.[0]?.value ?? null, tumourType: (m.episodes as Array<{ diagnosis: { tumourType: string } | null }>)?.[0]?.diagnosis?.tumourType ?? null }));
   }
 
   private maskNhsNumber(value: string | null): string {

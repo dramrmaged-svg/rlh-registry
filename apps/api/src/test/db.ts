@@ -13,12 +13,21 @@ export function createTestClient(): PrismaClient {
 }
 
 const TABLES = [
-  'audit_logs', 'refresh_tokens', 'mdt_records', 'clinical_snapshots',
-  'clinical_scores', 'lab_panels', 'patient_identifiers', 'diagnoses',
-  'follow_ups', 'procedures', 'treatment_courses', 'imaging_studies',
-  'mdt_sessions', 'patients', 'users',
+  'audit_logs', 'refresh_tokens', 'calculation_audits', 'toxicity_events',
+  'follow_ups', 'lesion_dose_injections', 'lesion_feeders', 'lesions',
+  'treatment_sessions', 'dosimetry_plans', 'maa_studies', 'mapping_sessions',
+  'episode_outcomes', 'imaging_studies', 'clinical_snapshots',
+  'clinical_scores', 'lab_panels', 'diagnoses', 'mdt_records', 'episodes',
+  'mdt_sessions', 'vocabulary_options', 'vocabularies', 'patient_identifiers',
+  'patients', 'users',
 ].join('", "');
 
+// All *.integration.spec.ts files share one physical database, and each
+// calls truncateAll() in its own beforeEach. Running spec files in parallel
+// (Jest's default) causes concurrent TRUNCATEs to deadlock and lets one
+// file's truncate wipe data another file's in-flight test still needs —
+// jest.integration.config.json sets maxWorkers: 1 specifically because of
+// this, and must stay that way as more integration spec files are added.
 export async function truncateAll(client: PrismaClient): Promise<void> {
   await client.$executeRawUnsafe(`TRUNCATE TABLE "${TABLES}" RESTART IDENTITY CASCADE`);
 }

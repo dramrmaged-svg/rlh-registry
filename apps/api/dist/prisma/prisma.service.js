@@ -15,7 +15,7 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const global_exception_filter_1 = require("../common/filters/global-exception.filter");
 const SOFT_DELETE_FILTERABLE_ACTIONS = new Set(['findFirst', 'findFirstOrThrow', 'findMany', 'count', 'aggregate', 'groupBy']);
-const SOFT_DELETABLE_MODELS = new Set(['Patient', 'MdtRecord', 'Procedure', 'FollowUp', 'ToxicityEvent']);
+const SOFT_DELETABLE_MODELS = new Set(['Patient', 'Episode', 'MdtRecord', 'MappingSession', 'DosimetryPlan', 'TreatmentSession', 'FollowUp', 'ToxicityEvent', 'Lesion']);
 const MAX_CONFLICT_RETRIES = 3;
 function conflictRetryDelayMs(attempt) {
     const base = 50 * Math.pow(2, attempt);
@@ -52,14 +52,12 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
             'repeatable-read': { isolationLevel: client_1.Prisma.TransactionIsolationLevel.RepeatableRead, maxWait: 5000, timeout: 10000 },
             'serializable': { isolationLevel: client_1.Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 15000 },
         }[isolation];
-        let lastError;
         for (let attempt = 0; attempt <= MAX_CONFLICT_RETRIES; attempt++) {
             try {
                 return await this.$transaction(fn, options);
             }
             catch (err) {
                 if (isConflictError(err)) {
-                    lastError = err;
                     if (attempt < MAX_CONFLICT_RETRIES) {
                         await new Promise((resolve) => setTimeout(resolve, conflictRetryDelayMs(attempt)));
                         continue;

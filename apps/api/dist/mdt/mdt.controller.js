@@ -33,11 +33,11 @@ let MdtController = class MdtController {
     constructor(mdtService) {
         this.mdtService = mdtService;
     }
-    listForPatient(patientId, currentUser) {
-        return this.mdtService.listForPatient(patientId, currentUser.role);
+    listForEpisode(episodeId, currentUser) {
+        return this.mdtService.listForEpisode(episodeId, currentUser.role);
     }
-    create(patientId, dto, currentUser, request) {
-        return this.mdtService.create(patientId, dto, currentUser, request);
+    create(episodeId, dto, currentUser, request) {
+        return this.mdtService.create(episodeId, dto, currentUser, request);
     }
     getRecord(id, currentUser) {
         return this.mdtService.getRecord(id, currentUser.role);
@@ -57,17 +57,17 @@ let MdtController = class MdtController {
 };
 exports.MdtController = MdtController;
 __decorate([
-    (0, common_1.Get)('patients/:patientId/mdt-records'),
-    __param(0, (0, common_1.Param)('patientId', common_1.ParseUUIDPipe)),
+    (0, common_1.Get)('episodes/:episodeId/mdt-records'),
+    __param(0, (0, common_1.Param)('episodeId', common_1.ParseUUIDPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Function]),
     __metadata("design:returntype", void 0)
-], MdtController.prototype, "listForPatient", null);
+], MdtController.prototype, "listForEpisode", null);
 __decorate([
-    (0, common_1.Post)('patients/:patientId/mdt-records'),
+    (0, common_1.Post)('episodes/:episodeId/mdt-records'),
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN, client_1.Role.CONSULTANT_IR, client_1.Role.FELLOW, client_1.Role.CNS_COORDINATOR),
-    __param(0, (0, common_1.Param)('patientId', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('episodeId', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
     __param(3, (0, common_1.Req)()),
