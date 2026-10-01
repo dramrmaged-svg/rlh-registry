@@ -1,0 +1,22 @@
+{
+  "name": "sirt-episode-extractor",
+  "version": "0.0.0-unaccepted",
+  "private": true,
+  "description": "SIRT Patient Episode Extractor — local, source-traceable capture and extraction feeding the RLH SIRT registry.",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest --config jest.config.json",
+    "field-mapping": "ts-node scripts/generate-field-mapping.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^22.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
