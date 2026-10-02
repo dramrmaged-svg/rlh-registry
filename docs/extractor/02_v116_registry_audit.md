@@ -59,6 +59,7 @@ SIRT field set: 294 definitions in 22 sections, including CBCT perfused/tumour v
 | F8 | MINOR | SIRT text parser (`parseAI` — deterministic regex despite the name) takes the first match per field; multi-position activities/vessels in one report are lost. Confidence values are hard-coded. | FACT. |
 | F9 | MAJOR (privacy) | LLM redaction is regex/exact-match: narrative names ("Mr X was reviewed"), study dates and rare identifiers can pass; approval is an in-memory checkbox; any HTTPS host is permitted once approved. | FACT (code); exploitability INFERENCE. |
 | F10 | MINOR | Child-Pugh bilirubin band uses ≤ 51 µmol/L for 2 points (conventional 34–50). | FACT. |
+| F12 | MINOR | A v116.14 boot step resets `RLH.VERSION`, page title and version meta to "v116.14" after load, so V116.15 identifies itself as v116.14 and audit events (which stamp `RLH.VERSION`) likely record the wrong version. | FACT (observed in browser; block 56 `boot()`). |
 | F11 | MAJOR (maintainability) | 15+ runtime patch layers (`v116.1` … `v116.15`, "hard-repair", "runtime-fix") monkey-patch earlier modules at load time, guarded by window flags. Behaviour depends on load order; difficult to test. | FACT. |
 
 ## 4. Labels
@@ -79,3 +80,10 @@ SIRT field set: 294 definitions in 22 sections, including CBCT perfused/tumour v
 2. The extractor's field catalogue gains V116 targets (Phase 1 revision). The Prisma mapping is retained as secondary.
 3. The extractor's own calculation module must not reuse V116's `calculateDerived` or dose engine until F1–F5 are fixed.
 4. **Deployment**: V116 runs as a browser file with no install. Whether the extractor can run anything other than a browser inside the Horizon desktop (PowerShell, portable Node) is now the deciding question for Phase 2 (U8).
+
+## 6. Remediation status
+
+| Finding | Status |
+|---|---|
+| F1 | **Patch prepared: `registry-patches/v116.16-derived-blank-guard/`** (guard layer, patcher, scan/repair with audit). Validated by unit tests and end-to-end in the real application. Impact is wider than first stated: any SIRT record saved before its post-treatment perfused volume was entered carries a false "Clinically significant variance" QA flag. Awaiting the registry owner's adoption decision. |
+| F0, F2–F12 | Open. |
