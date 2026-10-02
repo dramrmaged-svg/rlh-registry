@@ -216,7 +216,7 @@ export const FIELD_CATALOGUE: readonly FieldDef[] = [
     ex('catheter', 'Catheter / microcatheter', 'text', ['Y90_TREATMENT'], ['TreatmentSession.catheterType']),
     ex('embolic_material', 'Embolic material', 'code', ['Y90_TREATMENT'], ['TreatmentSession.embolicMaterial']),
     ex('planned_activity_gbq', 'Planned activity (treatment report)', 'number', ['Y90_TREATMENT'], [], { unit: 'GBq' }),
-    ex('delivered_activity_gbq', 'Delivered activity', 'number', ['Y90_TREATMENT'], ['TreatmentSession.administeredActivityGbq'], { unit: 'GBq', required: true, verification: 'ALWAYS', note: 'Never populated from planned/prescribed activity.' }),
+    ex('delivered_activity_gbq', 'Delivered activity (GROSS, before residual subtraction)', 'number', ['Y90_TREATMENT'], [], { unit: 'GBq', required: true, verification: 'ALWAYS', note: 'Gross per registry owner (2026-10-02); matches V116 deliveredActivity. Never populated from planned/prescribed activity. Prisma has no gross column.' }),
     ex('residual_activity_gbq', 'Residual activity', 'number', ['Y90_TREATMENT'], [], { unit: 'GBq' }),
     ex('delivery_percentage_documented', 'Delivery % (as documented)', 'number', ['Y90_TREATMENT'], [], { unit: '%' }),
     ex('reflux', 'Reflux', 'boolean', ['Y90_TREATMENT'], []),
@@ -230,13 +230,14 @@ export const FIELD_CATALOGUE: readonly FieldDef[] = [
     ex('dap_gycm2', 'Dose-area product', 'number', ['Y90_TREATMENT'], ['TreatmentSession.dapGyCm2'], { unit: 'Gy.cm2', verification: 'ALWAYS' }),
     ex('contrast_volume_ml', 'Contrast volume', 'number', ['Y90_TREATMENT'], ['TreatmentSession.contrastVolumeMl'], { unit: 'mL' }),
     calc('number_of_administration_positions', 'Number of administration positions', 'number', 'COUNT_ADMINISTRATIONS', [], { verification: 'ON_CONFLICT' }),
-    calc('delivery_percentage', 'Planned vs delivered activity %', 'number', 'DELIVERY_PERCENTAGE', [], { unit: '%' }),
+    calc('net_administered_activity_gbq', 'Net administered activity (gross − residual)', 'number', 'NET_ADMINISTERED_ACTIVITY', ['TreatmentSession.administeredActivityGbq'], { unit: 'GBq', note: 'Only when gross delivered AND residual are both documented; a missing residual is never taken as 0. Prisma administeredActivityGbq assumed to mean net — confirm before Phase 5.' }),
+    calc('delivery_percentage', 'Net administered ÷ planned activity × 100', 'number', 'DELIVERY_PERCENTAGE', [], { unit: '%' }),
   ]),
 
   ...group('y90_administration', [
     ex('vessel', 'Administration vessel', 'text', ['Y90_TREATMENT'], [], { verification: 'ALWAYS' }),
     ex('planned_activity_gbq', 'Planned activity (position)', 'number', ['Y90_TREATMENT', 'DOSIMETRY_PLAN'], [], { unit: 'GBq' }),
-    ex('delivered_activity_gbq', 'Delivered activity (position)', 'number', ['Y90_TREATMENT'], ['LesionDoseInjection.deliveredActivityGbq'], { unit: 'GBq', verification: 'ALWAYS', note: 'Maps to LesionDoseInjection only when the position is clinician-linked to a lesion (and optionally feeder).' }),
+    ex('delivered_activity_gbq', 'Delivered activity (position)', 'number', ['Y90_TREATMENT'], ['LesionDoseInjection.deliveredActivityGbq'], { unit: 'GBq', verification: 'ALWAYS', note: 'Maps to LesionDoseInjection only when the position is clinician-linked to a lesion (and optionally feeder). Gross vs net per position: UNKNOWN — capture as documented.' }),
   ]),
 
   ...group('post_treatment_dosimetry', [

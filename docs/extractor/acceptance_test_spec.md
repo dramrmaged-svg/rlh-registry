@@ -21,7 +21,7 @@ No real identifiers. Fixture documents will live in `apps/extractor/fixtures/syn
 | D5 | Mapping angiogram | MAPPING_ANGIOGRAPHY | 2026-03-24 | DIRECT_TEXT_COPY | R CFA, 5F sheath, 5F SIM1, 2.7F microcatheter; replaced RHA from SMA (Michels III); CBCT performed, perfused vol 980 mL; GDA prophylactically coiled; 150 MBq MAA into RHA; no complication. |
 | D6 | MAA SPECT/CT | MAA_SPECT_CT | 2026-03-24 | EXPORTED_PDF_TEXT | LSF **6.2%**, predicted lung dose 4.1 Gy, no extrahepatic uptake, T/N ratio 3.4 |
 | D7 | Dosimetry plan | DOSIMETRY_PLAN | 2026-03-30 | EXPORTED_PDF_TEXT | Partition model, glass (TheraSphere), target vol 980 mL, tumour vol 142 mL, prescribed **3.2 GBq**, predicted tumour dose 210 Gy, predicted normal-liver dose 38 Gy, intent radiation lobectomy |
-| D8 | Y-90 treatment report | Y90_TREATMENT | 2026-04-14 | DIRECT_TEXT_COPY | One position (replaced RHA), planned 3.2 GBq, residual 0.2 GBq, delivered **3.0 GBq**, no reflux, no stasis, technical success, same-day discharge |
+| D8 | Y-90 treatment report | Y90_TREATMENT | 2026-04-14 | DIRECT_TEXT_COPY | One position (replaced RHA), planned 3.2 GBq, delivered (gross) **3.2 GBq**, residual 0.2 GBq (net administered 3.0 GBq is calculated, not documented), no reflux, no stasis, technical success, same-day discharge |
 | D9 | Blank report placeholder | — | 2026-04-14 | DIRECT_TEXT_COPY | Empty body (simulates report not yet loaded) |
 | D10 | Post-Y90 PET/CT | POST_Y90_PET_CT | 2026-04-14 | DIRECT_TEXT_COPY | Distribution concordant with intended territory; L1 and L2 covered; no non-target activity. Delivered tumour dose not documented. |
 | D11 | Follow-up MRI | FOLLOWUP_MRI | 2026-07-08 | DIRECT_TEXT_COPY | L1 55 mm, viable 20 mm; L2 18 mm non-enhancing; no new lesions |
@@ -93,7 +93,7 @@ Severity: **C** = CRITICAL, **M** = MAJOR, **m** = MINOR. "Phase" = earliest pha
 ### Treatment (AT-TX)
 | ID | Expected | Sev | Phase |
 |---|---|---|---|
-| AT-TX-01 | date 2026-04-14, glass, intent RADIATION_LOBECTOMY, 1 administration position, planned 3.2, residual 0.2, delivered 3.0 GBq, reflux false, stasis false, technical success true, same-day discharge true | C | 4 |
+| AT-TX-01 | date 2026-04-14, glass, intent RADIATION_LOBECTOMY, 1 administration position, planned 3.2, delivered gross 3.2, residual 0.2 GBq, reflux false, stasis false, technical success true, same-day discharge true | C | 4 |
 | AT-TX-02 | delivered_activity_gbq never sourced from D7 | C | 4 |
 
 ### Post-Y90 (AT-POST)
@@ -114,7 +114,7 @@ Severity: **C** = CRITICAL, **M** = MAJOR, **m** = MINOR. "Phase" = earliest pha
 |---|---|---|---|
 | AT-CALC-01 | ALBI = −2.4015 (±0.0005), grade 2, inputs = D1 field_value ids | C | 7 |
 | AT-CALC-02 | Child-Pugh NOT_CALCULABLE; missing = encephalopathy | C | 7 |
-| AT-CALC-03 | Delivery % = 93.75% (3.0/3.2) | M | 7 |
+| AT-CALC-03 | Net administered = 3.0 GBq (3.2 − 0.2); delivery % = 93.75% (net 3.0 ÷ planned 3.2); gross value never relabelled as net | C | 7 |
 | AT-CALC-04 | MELD 3.0 NOT_CALCULABLE until sex documented/verified (no male default) | C | 7 |
 | AT-CALC-05 | Every calculation has unit tests incl. boundary values; LLM never invoked for any calculation (assert AI provider call count = 0 during calc runs) | C | 7 |
 

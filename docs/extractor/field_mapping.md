@@ -6,7 +6,7 @@ Extractor store schema version: 1.
 
 Conventions: **AI-derived** is always "No" — AI output is never an authoritative registry value (it may only be offered as a suggestion that a clinician must verify). **Verification**: ALWAYS = every value verified before push; LOW_CONFIDENCE = verify if confidence < 0.85, OCR-derived, or conflicting; ON_CONFLICT = verify only when sources disagree. Required = counted by the completeness engine.
 
-Summary: 339 registry columns in scope; 118 fed by the extractor; 221 registry-only (system / workflow / identifiable / clinician-decision / formula-not-adopted); 0 unaccounted. 92 extractor fields have **no registry home** (see §2).
+Summary: 339 registry columns in scope; 118 fed by the extractor; 221 registry-only (system / workflow / identifiable / clinician-decision / formula-not-adopted); 0 unaccounted. 93 extractor fields have **no registry home** (see §2).
 
 ## 1. Every registry field
 
@@ -292,7 +292,7 @@ Summary: 339 registry columns in scope; 118 fed by the extractor; 221 registry-o
 | `TreatmentSession.contrastVolumeMl` | `y90_treatment.contrast_volume_ml` | Y90_TREATMENT | Deterministic text rule | — | No | Optional | LOW_CONFIDENCE |
 | `TreatmentSession.embolicMaterial` | `y90_treatment.embolic_material` | Y90_TREATMENT | Deterministic text rule | — | No | Optional | LOW_CONFIDENCE |
 | `TreatmentSession.particleProduct` | `y90_treatment.y90_product` | Y90_TREATMENT, DOSIMETRY_PLAN | Deterministic text rule | — | No | Optional | LOW_CONFIDENCE |
-| `TreatmentSession.administeredActivityGbq` | `y90_treatment.delivered_activity_gbq` | Y90_TREATMENT | Deterministic text rule | — | No | Required | ALWAYS |
+| `TreatmentSession.administeredActivityGbq` | `y90_treatment.net_administered_activity_gbq` | — | Calculation module | NET_ADMINISTERED_ACTIVITY | No | Optional | ALWAYS |
 | `TreatmentSession.maaBalanceCheckedAtDelivery` | — (registry-only: CLINICIAN_DECISION) | — | — | — | No | — | Registry checklist item. |
 | `TreatmentSession.complications` | `y90_treatment.immediate_complication` | Y90_TREATMENT | Deterministic text rule | — | No | Optional | LOW_CONFIDENCE |
 | `TreatmentSession.operatorUserId` | — (registry-only: WORKFLOW) | — | — | — | No | — | Registry user reference. |
@@ -414,6 +414,7 @@ These are captured, provenance-tracked and exportable from the extractor, but ca
 | `y90_treatment.glass_or_resin` | Glass or resin | — | Y90_TREATMENT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE | Deterministic from product name when product is documented; still verified. |
 | `y90_treatment.treatment_intent` | Treatment intent | — | Y90_TREATMENT, MDT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | ALWAYS |  |
 | `y90_treatment.planned_activity_gbq` | Planned activity (treatment report) | GBq | Y90_TREATMENT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
+| `y90_treatment.delivered_activity_gbq` | Delivered activity (GROSS, before residual subtraction) | GBq | Y90_TREATMENT | Deterministic text rule | — | Required | ALWAYS | Gross per registry owner (2026-10-02); matches V116 deliveredActivity. Never populated from planned/prescribed activity. Prisma has no gross column. |
 | `y90_treatment.residual_activity_gbq` | Residual activity | GBq | Y90_TREATMENT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `y90_treatment.delivery_percentage_documented` | Delivery % (as documented) | % | Y90_TREATMENT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `y90_treatment.reflux` | Reflux | — | Y90_TREATMENT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
@@ -423,7 +424,7 @@ These are captured, provenance-tracked and exportable from the extractor, but ca
 | `y90_treatment.same_day_discharge` | Same-day discharge | — | Y90_TREATMENT, OTHER | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `y90_treatment.staged_treatment` | Staged treatment | — | Y90_TREATMENT, MDT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `y90_treatment.number_of_administration_positions` | Number of administration positions | — | — | Calculation module | COUNT_ADMINISTRATIONS | Optional | ON_CONFLICT |  |
-| `y90_treatment.delivery_percentage` | Planned vs delivered activity % | % | — | Calculation module | DELIVERY_PERCENTAGE | Optional | ALWAYS |  |
+| `y90_treatment.delivery_percentage` | Net administered ÷ planned activity × 100 | % | — | Calculation module | DELIVERY_PERCENTAGE | Optional | ALWAYS |  |
 | `y90_administration.vessel` | Administration vessel | — | Y90_TREATMENT | Deterministic text rule | — | Optional | ALWAYS |  |
 | `y90_administration.planned_activity_gbq` | Planned activity (position) | GBq | Y90_TREATMENT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `post_treatment_dosimetry.distribution` | Distribution description | — | POST_Y90_PET_CT, POST_Y90_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
@@ -467,8 +468,8 @@ These are captured, provenance-tracked and exportable from the extractor, but ca
 - `procedure_vessel.vessel_name` → `LesionFeeder.vesselName`, `LesionFeeder.feederNumber`: Only TUMOUR_FEEDER vessels linked to a lesion map to LesionFeeder; TARGET/EMBOLISED/MAA_INJECTION roles have no registry home.
 - `maa_study.lung_shunt_fraction_percent` → `MaaStudy.lungShuntFraction`: Stored as PERCENT. Registry column is unit-less — push writes percent, matching calculateLungShuntRiskBand.
 - `dosimetry_plan.tumour_liver_volume_ratio` → `DosimetryPlan.tumourLiverVolumeRatio`: Definition in registry is UNKNOWN (tumour/whole-liver vs tumour/perfused) — documented value only, never calculated.
-- `y90_treatment.delivered_activity_gbq` → `TreatmentSession.administeredActivityGbq`: Never populated from planned/prescribed activity.
-- `y90_administration.delivered_activity_gbq` → `LesionDoseInjection.deliveredActivityGbq`: Maps to LesionDoseInjection only when the position is clinician-linked to a lesion (and optionally feeder).
+- `y90_treatment.net_administered_activity_gbq` → `TreatmentSession.administeredActivityGbq`: Only when gross delivered AND residual are both documented; a missing residual is never taken as 0. Prisma administeredActivityGbq assumed to mean net — confirm before Phase 5.
+- `y90_administration.delivered_activity_gbq` → `LesionDoseInjection.deliveredActivityGbq`: Maps to LesionDoseInjection only when the position is clinician-linked to a lesion (and optionally feeder). Gross vs net per position: UNKNOWN — capture as documented.
 - `post_treatment_dosimetry.delivered_tumour_dose_gy` → `LesionDoseInjection.deliveredDoseGy`: Lesion-level registry column: populated only when the dose is documented for a specific lesion.
 - `follow_up_episode.interval_months` → `FollowUp.intervalMonths`: Divisor 30.4375 days/month, documented in formula version (ADR-0001 notes three legacy divisors).
 - `lesion_follow_up.response_recist` → `FollowUp.overallResponse`: Only when baseline and follow-up measurements of the same lesion exist; written to a lesion-scoped FollowUp row.

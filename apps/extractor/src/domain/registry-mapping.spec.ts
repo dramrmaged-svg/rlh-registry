@@ -56,6 +56,14 @@ describe('registry field mapping', () => {
     }
   });
 
+  it('never pushes gross delivered activity into the registry administered (net) column', () => {
+    const gross = FIELD_CATALOGUE.find((d) => d.entity === 'y90_treatment' && d.key === 'delivered_activity_gbq');
+    const net = FIELD_CATALOGUE.find((d) => d.entity === 'y90_treatment' && d.key === 'net_administered_activity_gbq');
+    expect(gross?.registryTargets).not.toContain('TreatmentSession.administeredActivityGbq');
+    expect(net?.method).toBe('CALCULATE');
+    expect(net?.registryTargets).toContain('TreatmentSession.administeredActivityGbq');
+  });
+
   it('covers every completeness item named in the brief', () => {
     const required = (entity: string, key: string) => FIELD_CATALOGUE.find((d) => d.entity === entity && d.key === key)?.required;
     expect(required('baseline_assessment', 'diagnosis')).toBe(true);
