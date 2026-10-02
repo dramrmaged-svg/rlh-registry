@@ -161,7 +161,7 @@ export const FIELD_CATALOGUE: readonly FieldDef[] = [
     ex('mapping_complication', 'Mapping complication', 'text', ['MAPPING_ANGIOGRAPHY'], ['MappingSession.complications']),
     ex('mapping_technical_success', 'Mapping technical success', 'boolean', ['MAPPING_ANGIOGRAPHY'], []),
     ex('same_day_sirt', 'Same-day mapping and SIRT', 'boolean', ['MAPPING_ANGIOGRAPHY', 'Y90_TREATMENT'], []),
-    calc('cbct_at_ratio', 'CBCT A/T ratio (calculated)', 'number', 'CBCT_AT_RATIO', [], { note: 'Only when the report gives the enhancement inputs explicitly.' }),
+    calc('cbct_at_ratio', 'CBCT angiosome-to-tumour (A/T) ratio (calculated)', 'number', 'CBCT_AT_RATIO', [], { note: 'CBCT perfused volume ÷ CBCT tumour volume (dimensionless), per the V116 registry definition (M5.4). Both inputs must come from the same mapping CBCT.' }),
   ]),
 
   ...group('procedure_vessel', [
@@ -181,12 +181,13 @@ export const FIELD_CATALOGUE: readonly FieldDef[] = [
     ex('distribution_matches_target', 'MAA distribution concordant with target', 'boolean', ['MAA_SPECT_CT'], ['MaaStudy.maaDistributionMatchesTarget']),
     ex('perfused_volume_ml', 'Perfused volume', 'number', ['MAA_SPECT_CT', 'DOSIMETRY_PLAN'], [], { unit: 'mL' }),
     ex('tumour_volume_ml', 'Tumour volume', 'number', ['MAA_SPECT_CT', 'DOSIMETRY_PLAN'], [], { unit: 'mL' }),
-    ex('maa_at_ratio_documented', 'MAA T/N ratio (as documented)', 'number', ['MAA_SPECT_CT', 'DOSIMETRY_PLAN'], [], { note: 'NOT DosimetryPlan.tumourLiverVolumeRatio — that is a volume ratio.' }),
+    ex('tumour_normal_ratio_documented', 'MAA tumour-to-normal uptake ratio (T/N, as documented)', 'number', ['MAA_SPECT_CT', 'DOSIMETRY_PLAN'], [], { note: 'Count-density ratio. Distinct from the A/T volume ratio and from DosimetryPlan.tumourLiverVolumeRatio. Never defaulted to 1 when absent.' }),
+    ex('maa_at_ratio_documented', 'MAA angiosome-to-tumour (A/T) ratio (as documented)', 'number', ['MAA_SPECT_CT', 'DOSIMETRY_PLAN'], []),
     ex('predicted_tumour_dose_gy', 'Predicted tumour dose (MAA report)', 'number', ['MAA_SPECT_CT'], [], { unit: 'Gy' }),
     ex('predicted_normal_liver_dose_gy', 'Predicted normal-liver dose (MAA report)', 'number', ['MAA_SPECT_CT'], [], { unit: 'Gy' }),
     ex('dosimetry_method', 'Dosimetry method (MAA report)', 'text', ['MAA_SPECT_CT'], []),
     calc('lsf_risk_band', 'LSF risk band', 'code', 'LUNG_SHUNT_RISK_BAND', ['MaaStudy.calculatedLsfRiskBand']),
-    calc('maa_at_ratio', 'MAA T/N ratio (calculated)', 'number', 'MAA_TN_RATIO', [], { note: 'Only from documented tumour and normal-liver count densities.' }),
+    calc('maa_at_ratio', 'MAA angiosome-to-tumour (A/T) ratio (calculated)', 'number', 'MAA_AT_RATIO', [], { note: 'MAA/SPECT perfused volume ÷ MAA tumour volume. No fallback to the mapping tumour volume (V116 does fall back — see V116 audit F3).' }),
   ]),
 
   ...group('dosimetry_plan', [

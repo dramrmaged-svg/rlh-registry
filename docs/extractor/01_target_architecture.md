@@ -150,3 +150,15 @@ Out of scope for Phase 2: classification beyond a stub, extraction, registry pus
 ## 7. Acceptance criteria
 
 Defined in `acceptance_test_spec.md`. Release rule: **any CRITICAL failure blocks release; no version is accepted until the full reference-patient suite passes.**
+
+## 8. Decisions and open items (updated 2026-10-02)
+
+| ID | Item | Status |
+|---|---|---|
+| U1 | Where the extractor runs | **DECIDED: inside the Horizon desktop**, alongside RIS/PACS. UI Automation of RIS/PACS windows is then possible, and copy/paste happens within the session. |
+| U2 | Horizon clipboard redirection policy | UNKNOWN — **no longer blocking**: with U1 decided, copy happens inside the remote session and redirection is not needed. |
+| U3 | RIS/PACS products, export/HL7 options | UNKNOWN. Phase 2 will include a read-only "probe" that records window titles/UI structure to build `config/workstation.json`. The HL7/export question should still go to IT. |
+| U4 | Live registry | **SUPPLIED: V116.15.** It replaces Prisma as the primary integration target. See `02_v116_registry_audit.md`. |
+| U5 | Follow-up windows | **APPROVED**: EARLY < 60 d; M3 60–135 d; M6 136–225 d; M9 226–315 d; M12 316–450 d; LATE > 450 d (days from first Y-90 administration). |
+| U8 | What can execute inside the Horizon desktop (browser only? PowerShell? portable Node?) | **OPEN — now blocks the Phase 2 runtime choice.** |
+| IG-1 | V116 contains embedded identifiable patient data (audit F0) | **OPEN — for the registry owner / IG lead.** |

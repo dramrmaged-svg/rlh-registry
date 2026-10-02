@@ -107,8 +107,8 @@ export function renderFieldMapping(registry: RegistryField[] = parseRegistrySche
   out.push('| Pathology | Partial (`histologyConfirmed` only) | Histology, grade, Ki-67 captured; gap. |');
   out.push('| Source outcome | Partial (`EpisodeOutcome`) | Outcome fields carry full provenance in extractor. |');
   out.push('| Per-lesion response | Partial (`FollowUp.lesionId` + `overallResponse` text) | Lesion-level serial measurements + RECIST/mRECIST with inputs; dimensions are a gap. |');
-  out.push('| CBCT A/T ratio | **No** | Documented + calculated (when inputs present); gap. |');
-  out.push('| MAA A/T (T/N) ratio | **No** (`tumourLiverVolumeRatio` is a *volume* ratio — do not conflate) | Documented + calculated; gap. |');
+  out.push('| CBCT A/T ratio | **No** in Prisma; **Yes** in V116 (`cbctAtRatio`) | Angiosome-to-tumour volume ratio: CBCT perfused ÷ CBCT tumour volume. Documented + calculated. |');
+  out.push('| MAA A/T ratio | **No** in Prisma; **Yes** in V116 (`maaAtRatio`) | MAA perfused ÷ MAA tumour volume, no cross-source fallback. Distinct from T/N uptake ratio (`tumourNormalRatio`). |');
   out.push('');
   return out.join('\n');
 }

@@ -6,7 +6,7 @@ Extractor store schema version: 1.
 
 Conventions: **AI-derived** is always "No" — AI output is never an authoritative registry value (it may only be offered as a suggestion that a clinician must verify). **Verification**: ALWAYS = every value verified before push; LOW_CONFIDENCE = verify if confidence < 0.85, OCR-derived, or conflicting; ON_CONFLICT = verify only when sources disagree. Required = counted by the completeness engine.
 
-Summary: 339 registry columns in scope; 118 fed by the extractor; 221 registry-only (system / workflow / identifiable / clinician-decision / formula-not-adopted); 0 unaccounted. 91 extractor fields have **no registry home** (see §2).
+Summary: 339 registry columns in scope; 118 fed by the extractor; 221 registry-only (system / workflow / identifiable / clinician-decision / formula-not-adopted); 0 unaccounted. 92 extractor fields have **no registry home** (see §2).
 
 ## 1. Every registry field
 
@@ -393,18 +393,19 @@ These are captured, provenance-tracked and exportable from the extractor, but ca
 | `mapping_procedure.prophylactic_embolisation` | Prophylactic embolisation | — | MAPPING_ANGIOGRAPHY | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `mapping_procedure.mapping_technical_success` | Mapping technical success | — | MAPPING_ANGIOGRAPHY | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `mapping_procedure.same_day_sirt` | Same-day mapping and SIRT | — | MAPPING_ANGIOGRAPHY, Y90_TREATMENT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
-| `mapping_procedure.cbct_at_ratio` | CBCT A/T ratio (calculated) | — | — | Calculation module | CBCT_AT_RATIO | Optional | ALWAYS | Only when the report gives the enhancement inputs explicitly. |
+| `mapping_procedure.cbct_at_ratio` | CBCT angiosome-to-tumour (A/T) ratio (calculated) | — | — | Calculation module | CBCT_AT_RATIO | Optional | ALWAYS | CBCT perfused volume ÷ CBCT tumour volume (dimensionless), per the V116 registry definition (M5.4). Both inputs must come from the same mapping CBCT. |
 | `maa_study.injection_position` | MAA injection position | — | MAA_SPECT_CT, MAPPING_ANGIOGRAPHY | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.lung_dose_gy` | Predicted lung dose (MAA report) | Gy | MAA_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.tumour_uptake` | Tumour uptake description | — | MAA_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.normal_liver_uptake` | Normal liver uptake description | — | MAA_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.perfused_volume_ml` | Perfused volume | mL | MAA_SPECT_CT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.tumour_volume_ml` | Tumour volume | mL | MAA_SPECT_CT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
-| `maa_study.maa_at_ratio_documented` | MAA T/N ratio (as documented) | — | MAA_SPECT_CT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE | NOT DosimetryPlan.tumourLiverVolumeRatio — that is a volume ratio. |
+| `maa_study.tumour_normal_ratio_documented` | MAA tumour-to-normal uptake ratio (T/N, as documented) | — | MAA_SPECT_CT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE | Count-density ratio. Distinct from the A/T volume ratio and from DosimetryPlan.tumourLiverVolumeRatio. Never defaulted to 1 when absent. |
+| `maa_study.maa_at_ratio_documented` | MAA angiosome-to-tumour (A/T) ratio (as documented) | — | MAA_SPECT_CT, DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.predicted_tumour_dose_gy` | Predicted tumour dose (MAA report) | Gy | MAA_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.predicted_normal_liver_dose_gy` | Predicted normal-liver dose (MAA report) | Gy | MAA_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `maa_study.dosimetry_method` | Dosimetry method (MAA report) | — | MAA_SPECT_CT | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
-| `maa_study.maa_at_ratio` | MAA T/N ratio (calculated) | — | — | Calculation module | MAA_TN_RATIO | Optional | ALWAYS | Only from documented tumour and normal-liver count densities. |
+| `maa_study.maa_at_ratio` | MAA angiosome-to-tumour (A/T) ratio (calculated) | — | — | Calculation module | MAA_AT_RATIO | Optional | ALWAYS | MAA/SPECT perfused volume ÷ MAA tumour volume. No fallback to the mapping tumour volume (V116 does fall back — see V116 audit F3). |
 | `dosimetry_plan.tumour_volume_ml` | Tumour volume | mL | DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `dosimetry_plan.normal_liver_volume_ml` | Normal liver volume | mL | DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
 | `dosimetry_plan.predicted_tumour_dose_gy` | Predicted tumour dose | Gy | DOSIMETRY_PLAN | Deterministic text rule | — | Optional | LOW_CONFIDENCE |  |
@@ -488,6 +489,6 @@ These are captured, provenance-tracked and exportable from the extractor, but ca
 | Pathology | Partial (`histologyConfirmed` only) | Histology, grade, Ki-67 captured; gap. |
 | Source outcome | Partial (`EpisodeOutcome`) | Outcome fields carry full provenance in extractor. |
 | Per-lesion response | Partial (`FollowUp.lesionId` + `overallResponse` text) | Lesion-level serial measurements + RECIST/mRECIST with inputs; dimensions are a gap. |
-| CBCT A/T ratio | **No** | Documented + calculated (when inputs present); gap. |
-| MAA A/T (T/N) ratio | **No** (`tumourLiverVolumeRatio` is a *volume* ratio — do not conflate) | Documented + calculated; gap. |
+| CBCT A/T ratio | **No** in Prisma; **Yes** in V116 (`cbctAtRatio`) | Angiosome-to-tumour volume ratio: CBCT perfused ÷ CBCT tumour volume. Documented + calculated. |
+| MAA A/T ratio | **No** in Prisma; **Yes** in V116 (`maaAtRatio`) | MAA perfused ÷ MAA tumour volume, no cross-source fallback. Distinct from T/N uptake ratio (`tumourNormalRatio`). |
 
