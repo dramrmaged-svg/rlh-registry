@@ -61,6 +61,7 @@ SIRT field set: 294 definitions in 22 sections, including CBCT perfused/tumour v
 | F9 | MAJOR (privacy) | LLM redaction is regex/exact-match: narrative names ("Mr X was reviewed"), study dates and rare identifiers can pass; approval is an in-memory checkbox; any HTTPS host is permitted once approved. | FACT (code); exploitability INFERENCE. |
 | F10 | MINOR | Child-Pugh bilirubin band uses ≤ 51 µmol/L for 2 points (conventional 34–50). | FACT. |
 | F12 | MINOR | A v116.14 boot step resets `RLH.VERSION`, page title and version meta to "v116.14" after load, so V116.15 identifies itself as v116.14 and audit events (which stamp `RLH.VERSION`) likely record the wrong version. | FACT (observed in browser; block 56 `boot()`). |
+| F14 | MINOR (performance) | While the SIRT screen is open, V116.15 re-renders continuously (~30 times per second: the v116.15 linked-field banner and auto-fill notes), even when idle. It costs CPU in a VDI session; no data effect observed. Identical in unpatched, v116.16 and v116.17 builds. | FACT (DOM mutation counts in headless Chromium). |
 | F11 | MAJOR (maintainability) | 15+ runtime patch layers (`v116.1` … `v116.15`, "hard-repair", "runtime-fix") monkey-patch earlier modules at load time, guarded by window flags. Behaviour depends on load order; difficult to test. | FACT. |
 
 ## 4. Labels
@@ -89,4 +90,5 @@ SIRT field set: 294 definitions in 22 sections, including CBCT perfused/tumour v
 | F1 | **Patch prepared: `registry-patches/v116.16-derived-blank-guard/`** (guard layer, patcher, scan/repair with audit). Validated by unit tests and end-to-end in the real application. Impact is wider than first stated: any SIRT record saved before its post-treatment perfused volume was entered carries a false "Clinically significant variance" QA flag. Awaiting the registry owner's adoption decision. |
 | F0 | **De-identified build prepared** (2026-10-02): embedded v113 rows removed; verified that none of the 301 identifier tokens from the removed rows remain; app loads and all 18 routes render without errors; seeding/merge from the block is now a no-op. Not committed. The identifiable original remains with the registry owner. |
 | F5 | Resolved (see table). |
-| F2–F4, F6–F13 | Open. |
+| F13 | **Patch prepared: `registry-patches/v116.17-net-activity-definitions/`** implementing the owner-approved net definitions (delivery efficiency = net ÷ gross; activity variance, activity per litre net-based; new field "Planned Activity Administered (%)"). 11/11 unit, 23/23 end-to-end checks through the SIRT form. Requires v116.16. |
+| F2–F4, F6–F12, F14 | Open. |

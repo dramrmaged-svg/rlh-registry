@@ -1,0 +1,50 @@
+[
+ {
+  "id": "E1-schema-new-field",
+  "why": "Add 'Planned Activity Administered (%)' to the SIRT schema (Planned-versus-Actual QA) so it is shown, queryable in Cohort and exported.",
+  "from": "{\"key\":\"activityVariancePercent\",\"section\":\"Planned-versus-Actual QA\",\"label\":\"Activity Variance (%)\",\"type\":\"input\",\"tag\":\"input\",\"unit\":\"%\",\"options\":[],\"default\":\"\",\"readonly\":true,\"required\":false,\"min\":\"\",\"max\":\"\",\"step\":\"\",\"placeholder\":\"\",\"origin\":\"static_dom\",\"choice\":\"\"}",
+  "to": "{\"key\":\"activityVariancePercent\",\"section\":\"Planned-versus-Actual QA\",\"label\":\"Activity Variance (%)\",\"type\":\"input\",\"tag\":\"input\",\"unit\":\"%\",\"options\":[],\"default\":\"\",\"readonly\":true,\"required\":false,\"min\":\"\",\"max\":\"\",\"step\":\"\",\"placeholder\":\"\",\"origin\":\"static_dom\",\"choice\":\"\"},{\"key\":\"plannedActivityAdministeredPercent\",\"section\":\"Planned-versus-Actual QA\",\"label\":\"Planned Activity Administered (%)\",\"type\":\"input\",\"tag\":\"input\",\"unit\":\"%\",\"options\":[],\"default\":\"\",\"readonly\":true,\"required\":false,\"min\":\"\",\"max\":\"\",\"step\":\"\",\"placeholder\":\"\",\"origin\":\"static_dom\",\"choice\":\"\"}"
+ },
+ {
+  "id": "E2-delivered-label-gross",
+  "why": "Form label states that delivered activity is gross.",
+  "from": "\"label\":\"Delivered Activity (GBq)\"",
+  "to": "\"label\":\"Delivered Activity — gross, before residual (GBq)\""
+ },
+ {
+  "id": "E3-panel-delivery-efficiency",
+  "why": "Calculation panel formula text.",
+  "from": "['deliveryEfficiency','Delivery efficiency','%','Delivered activity ÷ assayed activity × 100']",
+  "to": "['deliveryEfficiency','Delivery efficiency','%','Net activity (delivered − residual) ÷ delivered (gross) activity × 100']"
+ },
+ {
+  "id": "E4-panel-activity-per-litre",
+  "why": "Calculation panel formula text.",
+  "from": "['activityPerPerfusedLitre','Activity / perfused volume','GBq/L','Delivered activity ÷ perfused volume']",
+  "to": "['activityPerPerfusedLitre','Activity / perfused volume','GBq/L','Net activity (delivered − residual) ÷ perfused volume']"
+ },
+ {
+  "id": "E5-panel-variance-and-new-row",
+  "why": "Calculation panel formula text, plus a row for the new value.",
+  "from": "['activityVariancePercent','Activity variance','%','Delivered vs planned activity'],",
+  "to": "['activityVariancePercent','Activity variance','%','Net administered (delivered − residual) vs planned activity'],\n     ['plannedActivityAdministeredPercent','Planned activity administered','%','Net administered ÷ planned activity × 100'],"
+ },
+ {
+  "id": "E6-harmonisation-derived-keys",
+  "why": "v116.15 change detection: include the new key so its changes trigger autosave.",
+  "from": "const CORE_DERIVED_KEYS=['decayCorrectedActivity','deliveryEfficiency','residualFraction','tumourBurdenPercent','calculatedNormalLiverVolume','activityPerPerfusedLitre','tumourDoseDifference','activityVariancePercent','perfusedVolumeVariancePercent','tumourDoseVariancePercent','normalLiverDoseVariancePercent','qaClassification','cbctAtRatio','maaAtRatio','microsphereMaterial','particlesNumberNumeric','particleCountMillion','particleDensityDenominatorVolumeMl','particlesDensityPerMl','activityDensityMbqMl','specificActivityBqPerParticle','particleCalculationMethod']",
+  "to": "const CORE_DERIVED_KEYS=['decayCorrectedActivity','deliveryEfficiency','residualFraction','tumourBurdenPercent','calculatedNormalLiverVolume','activityPerPerfusedLitre','tumourDoseDifference','activityVariancePercent','plannedActivityAdministeredPercent','perfusedVolumeVariancePercent','tumourDoseVariancePercent','normalLiverDoseVariancePercent','qaClassification','cbctAtRatio','maaAtRatio','microsphereMaterial','particlesNumberNumeric','particleCountMillion','particleDensityDenominatorVolumeMl','particlesDensityPerMl','activityDensityMbqMl','specificActivityBqPerParticle','particleCalculationMethod']"
+ },
+ {
+  "id": "E7-sirt-calc-keys",
+  "why": "SIRT module: treat the new key as a read-only calculated field.",
+  "from": "const calcKeys=new Set(['decayCorrectedActivity','deliveryEfficiency','residualFraction','tumourBurdenPercent','calculatedNormalLiverVolume','activityPerPerfusedLitre','tumourDoseDifference','activityVariancePercent','perfusedVolumeVariancePercent','tumourDoseVariancePercent','normalLiverDoseVariancePercent','qaClassification','cbctAtRatio','maaAtRatio','microsphereMaterial','particlesNumberNumeric','particleCountMillion','particleDensityDenominatorVolumeMl','particlesDensityPerMl','activityDensityMbqMl','specificActivityBqPerParticle','particleCalculationMethod'])",
+  "to": "const calcKeys=new Set(['decayCorrectedActivity','deliveryEfficiency','residualFraction','tumourBurdenPercent','calculatedNormalLiverVolume','activityPerPerfusedLitre','tumourDoseDifference','activityVariancePercent','plannedActivityAdministeredPercent','perfusedVolumeVariancePercent','tumourDoseVariancePercent','normalLiverDoseVariancePercent','qaClassification','cbctAtRatio','maaAtRatio','microsphereMaterial','particlesNumberNumeric','particleCountMillion','particleDensityDenominatorVolumeMl','particlesDensityPerMl','activityDensityMbqMl','specificActivityBqPerParticle','particleCalculationMethod'])"
+ },
+ {
+  "id": "E8-overview-caption",
+  "why": "Overview tile caption.",
+  "from": "<small>delivered ÷ assayed</small>",
+  "to": "<small>net (delivered − residual) ÷ delivered</small>"
+ }
+]

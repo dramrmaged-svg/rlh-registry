@@ -53,7 +53,7 @@ button { font:inherit; padding:7px 14px; border-radius:4px; border:1px solid var
  *
  * Also provides, for records saved before this patch:
  *   RLH.v11616.scan()                                   read-only report
- *   RLH.v11616.repair({ reviewer: 'Name', confirm: true }) clears values the
+ *   RLH.v11616.repair({ reviewer: 'Name', confirm: true }) corrects values the
  *     old engine fabricated from blank inputs, with an audit event per record.
  */
 const NS = window.RLH;
@@ -155,24 +155,30 @@ function sirtRecords(patients) {
 }
 
 /**
+ * For each guarded key whose stored value differs from the guarded (correct) value:
  * FABRICATED_BY_V116_BUG: stored value equals what the pre-patch engine produces from this record's
- *   current inputs, and the required inputs are blank → the value was invented from blanks.
- * REVIEW_SOURCE_UNKNOWN: a value is stored, inputs are blank, but it does not match the pre-patch engine
- *   (e.g. imported from v113/Excel). Never changed automatically.
+ *   current inputs → it was produced by the blank-as-zero defect. Repair sets the guarded value, which is
+ *   blank when inputs are missing, or the correct value (e.g. QA "Concordant" instead of a false
+ *   "Clinically significant variance" caused by a blank post-treatment volume).
+ * REVIEW_SOURCE_UNKNOWN: stored value matches neither engine (e.g. imported from v113/Excel). Never changed
+ *   automatically. Blank stored values are not reported (they fill in on the next edit).
  */
 function findings(p, onc, r) {
   const d = r.data, positions = r.treatmentPositions || [];
   const before = original(d, positions), after = guardedCalculateDerived(d, positions);
   const out = [];
   for (const key of GUARDED_KEYS) {
-    if (after[key] !== '' || isBlank(d[key])) continue;
+    const stored = isBlank(d[key]) ? '' : String(d[key]);
+    const corrected = String(after[key] ?? '');
+    if (stored === '' || stored === corrected) continue;
     out.push({
       patientId: p.patientId,
       oncologyEpisodeId: onc.oncologyEpisodeId,
       treatmentEpisodeId: r.treatmentEpisodeId,
       field: key,
-      storedValue: String(d[key]),
-      classification: String(d[key]) === String(before[key] ?? '') ? 'FABRICATED_BY_V116_BUG' : 'REVIEW_SOURCE_UNKNOWN',
+      storedValue: stored,
+      correctedValue: corrected,
+      classification: stored === String(before[key] ?? '') ? 'FABRICATED_BY_V116_BUG' : 'REVIEW_SOURCE_UNKNOWN',
     });
   }
   return out;
@@ -199,7 +205,7 @@ async function repair({ reviewer, confirm } = {}) {
   reviewer = String(reviewer).trim();
   const at = NS.isoNow ? NS.isoNow() : new Date().toISOString();
   const patients = await NS.db.getAll(NS.STORES.patients);
-  let recordsRepaired = 0, valuesCleared = 0;
+  let recordsRepaired = 0, valuesCorrected = 0;
   for (const original_p of patients) {
     const p = clone(original_p);
     const ops = [];
@@ -209,9 +215,9 @@ async function repair({ reviewer, confirm } = {}) {
       const before = clone(r);
       r.audit = Array.isArray(r.audit) ? r.audit : [];
       for (const f of fabricated) {
-        r.data[f.field] = '';
-        r.audit.push({ timestamp: at, action: 'V116_16_DERIVED_BLANK_REPAIR', fieldKey: f.field, before: f.storedValue, after: '', reviewedBy: reviewer, patchVersion: VERSION });
-        valuesCleared++;
+        r.data[f.field] = f.correctedValue;
+        r.audit.push({ timestamp: at, action: 'V116_16_DERIVED_BLANK_REPAIR', fieldKey: f.field, before: f.storedValue, after: f.correctedValue, reviewedBy: reviewer, patchVersion: VERSION });
+        valuesCorrected++;
       }
       r.updatedAt = at;
       recordsRepaired++;
@@ -233,7 +239,7 @@ async function repair({ reviewer, confirm } = {}) {
       await NS.db.atomic([{ type: 'put', store: NS.STORES.patients, value: p }, ...ops]);
     }
   }
-  const result = { patchVersion: VERSION, reviewer, recordsRepaired, valuesCleared };
+  const result = { patchVersion: VERSION, reviewer, recordsRepaired, valuesCorrected };
   console.info('[v116.16] repair', result, '— reload the page before further editing.');
   return result;
 }

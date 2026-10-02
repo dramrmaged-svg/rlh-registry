@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V116.17 patcher</title>
+<style>
+:root { --bg:#f4f6f8; --fg:#1b232c; --muted:#5a6774; --card:#fff; --border:#d7dde3; --ok:#1a7a3d; --bad:#b5261a; --warn:#9a6400; }
+@media (prefers-color-scheme: dark) { :root { --bg:#12171d; --fg:#e6ebf0; --muted:#9aa7b4; --card:#1b232c; --border:#2e3a46; --ok:#5cc985; --bad:#ff7a6e; --warn:#e3b04b; } }
+body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, "Segoe UI", sans-serif; }
+main { max-width:760px; margin:0 auto; padding:24px 16px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:16px; margin-bottom:16px; }
+h1 { font-size:18px; margin:0 0 4px; } p { margin:6px 0; } .muted { color:var(--muted); }
+.ok { color:var(--ok); } .bad { color:var(--bad); } .warn { color:var(--warn); }
+code { font-size:12px; word-break:break-all; } ul { padding-left:18px; }
+button { font:inherit; padding:7px 14px; border-radius:4px; border:1px solid var(--border); background:var(--card); color:var(--fg); cursor:pointer; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>RLH IR Oncology System — apply patch v116.17 (net administered activity definitions)</h1>
+    <p class="muted">Runs entirely in this browser. The file is read locally and never uploaded. Your original file is not modified; a new patched copy is downloaded.</p>
+    <p><label>Choose the V116.15 file that already has patch v116.16: <input type="file" id="file" accept=".html,.htm"></label></p>
+  </div>
+  <div class="card" id="result" hidden></div>
+  <div class="card muted">
+    <p><b>After patching:</b> open the patched file, open the SIRT module, and confirm there is no red banner at the top of the page. A red banner means a patch is not active; do not use that build.</p>
+    <p><b>Existing records:</b> see README. Run the v116.16 repair before the v116.17 repair.</p>
+  </div>
+</main>
+<script type="text/plain" id="patch-src">__PATCH_SOURCE__</script>
+<script type="application/json" id="edits-src">__EDITS_JSON__</script>
+<script>
+(() => {
+  const PATCH = document.getElementById('patch-src').textContent;
+  const EDITS = JSON.parse(document.getElementById('edits-src').textContent);
+  const MARK = 'rlh-v11617-net-activity-definitions';
+  const REQUIRED = 'rlh-v11616-derived-blank-guard';
+  const CONSUMER = 'src=NS.sirtSourceParity';
+  const END = '<' + '/script>'; // never write the closing tag literally inside an inline script
+  const out = document.getElementById('result');
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const count = (s, sub) => s.split(sub).length - 1;
+  async function sha256(text) {
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('');
+  }
+  function show(html) { out.hidden = false; out.innerHTML = html; }
+
+  function applyPatch(src) {
+    if (src.includes('id="' + MARK + '"')) throw new Error('This file already contains patch v116.17.');
+    if (!src.includes('<script id="' + REQUIRED + '">')) throw new Error('Patch v116.16 is not present. Apply v116.16 first.');
+    const bad = EDITS.filter((e) => count(src, e.from) !== 1).map((e) => e.id + ' (found ' + count(src, e.from) + ')');
+    if (bad.length) throw new Error('Source does not match V116.15 exactly; nothing was changed. Unmatched: ' + bad.join(', '));
+    let s = src;
+    for (const e of EDITS) s = s.replace(e.from, () => e.to);
+    const v16 = s.indexOf('<script id="' + REQUIRED + '">');
+    const close = s.indexOf(END, v16);
+    const insertAt = close + END.length;
+    if (s.indexOf(CONSUMER) < insertAt) throw new Error('SIRT module not found after patch v116.16. Not patched.');
+    return s.slice(0, insertAt) + '\n<script id="' + MARK + '">\n' + PATCH + '\n' + END + s.slice(insertAt);
+  }
+  window.__v11617Patcher = { applyPatch, EDITS };
+
+  document.getElementById('file').addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try {
+      const src = await f.text();
+      const patched = applyPatch(src);
+      const name = f.name.replace(/\.html?$/i, '') + '_PATCHED_V116_17.html';
+      const [h1, h2] = await Promise.all([sha256(src), sha256(patched)]);
+      const embeddedPid = /rlh-v1165-v113-excel-full-data-merge/.test(src) && /"patientName"\s*:\s*"[^"]+"/.test(src);
+      const url = URL.createObjectURL(new Blob([patched], { type: 'text/html' }));
+      const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      show('<p class="ok"><b>Patched copy downloaded:</b> ' + esc(name) + '</p>' +
+        '<ul><li>Input SHA-256: <code>' + h1 + '</code></li><li>Output SHA-256: <code>' + h2 + '</code></li>' +
+        '<li>Inserted patch v116.17 (' + PATCH.length + ' characters) after patch v116.16.</li><li>Source edits applied (' + EDITS.length + '): ' + EDITS.map((e) => esc(e.id)).join(', ') + '</li></ul>' +
+        (embeddedPid ? '<p class="warn"><b>Note:</b> the input contains the embedded v116.5 Excel data block with patient identifiers (audit finding F0). This tool does not remove it; the patched copy contains it too.</p>' : ''));
+    } catch (err) {
+      show('<p class="bad"><b>Not patched.</b> ' + esc(err.message) + '</p>');
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -184,3 +184,19 @@ test('patcher.html inline scripts compile (no premature closing tag)', () => {
   assert.doesNotThrow(() => new vm.Script(scripts[0]));
   assert.match(scripts[0], /window\.__v11616Patcher = \{ applyPatch \}/);
 });
+
+test('fabricated QA flag on a complete record is corrected to the true value, not blanked', async () => {
+  const d = { assayedActivity: '3.4', deliveredActivity: '3.1', plannedActivity: '3.2', treatmentPerfusedCBCTVolume: '980', treatmentTumourVolume: '142' };
+  const stored = { ...d, ...original(d, []) }; // QA "Clinically significant variance" from blank post-treatment volume
+  assert.equal(stored.qaClassification, 'Clinically significant variance');
+  const { NS, store } = boot([patient('P9', stored)]);
+  const { rows } = await NS.v11616.scan();
+  const qa = rows.find((r) => r.field === 'qaClassification');
+  assert.equal(qa.classification, 'FABRICATED_BY_V116_BUG');
+  assert.equal(qa.correctedValue, 'Concordant');
+  await NS.v11616.repair({ reviewer: 'Dr Synthetic', confirm: true });
+  const after = store.patients.get('P9').oncologyEpisodes.onc1.treatments[0].data;
+  assert.equal(after.qaClassification, 'Concordant');
+  assert.equal(after.perfusedVolumeVariancePercent, '');
+  assert.equal(after.deliveryEfficiency, stored.deliveryEfficiency); // correct values untouched
+});

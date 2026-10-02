@@ -41,13 +41,13 @@ This needs the browser's developer console (F12 → Console). If F12 is blocked 
    await RLH.v11616.scan()
    ```
    It lists, per SIRT treatment episode (internal IDs only, no names), each affected field:
-   - `FABRICATED_BY_V116_BUG` — the stored value is exactly what the old engine produces from this record's blank inputs.
-   - `REVIEW_SOURCE_UNKNOWN` — a value is stored with blank inputs but was not produced by the engine (e.g. imported from v113/Excel). **Never changed automatically**; review by hand.
-3. When you are satisfied, repair the fabricated values only:
+   - `FABRICATED_BY_V116_BUG` — the stored value is exactly what the old engine produces from this record's inputs, and differs from the correct value. The correct value is shown (`correctedValue`): blank where inputs are missing, or the true value — typically QA "Concordant" instead of a false "Clinically significant variance" caused by a not-yet-entered post-treatment volume.
+   - `REVIEW_SOURCE_UNKNOWN` — a value is stored that neither engine produces (e.g. imported from v113/Excel). **Never changed automatically**; review by hand.
+3. When you are satisfied, correct the fabricated values only:
    ```js
    await RLH.v11616.repair({ reviewer: 'Your name', confirm: true })
    ```
-   Each repaired record gets a per-field entry in its own `audit[]` (before value, after = blank, reviewer) and one `SIRT_DERIVED_BLANK_REPAIR_V11616` audit event with before/after snapshots. Source inputs are never touched. Running it again does nothing.
+   Each repaired record gets a per-field entry in its own `audit[]` (before value, corrected value, reviewer) and one `SIRT_DERIVED_BLANK_REPAIR_V11616` audit event with before/after snapshots. Source inputs are never touched. Running it again does nothing.
 4. Reload the page before editing further.
 
 Rollback: re-open the original file. Repaired values can be restored from the audit entries if ever needed.
@@ -56,11 +56,15 @@ Rollback: re-open the original file. Repaired values can be restored from the au
 
 | Check | Result |
 |---|---|
-| Unit tests (`node --test test/patch.test.js`) against a verbatim copy of the original engine: bug reproduced; blanks guarded; all-inputs-present outputs byte-identical (fixed case + 2,000 random cases); frozen object handled; misplacement refused; scan/repair classification, audit, idempotence; patcher embeds current patch and compiles | **15/15 pass** |
+| Unit tests (`node --test test/patch.test.js`) against a verbatim copy of the original engine: bug reproduced; blanks guarded; all-inputs-present outputs byte-identical (fixed case + 2,000 random cases); frozen object handled; misplacement refused; scan/repair classification, audit, idempotence; false QA flag on a complete record corrected to its true value; patcher embeds current patch and compiles | **16/16 pass** |
 | End-to-end in the real V116.15 application (headless Chromium, build with the embedded patient-data block removed; `test/e2e-v116.js`): patch via `patcher.html`; SIRT autosave code path; scan/repair on a synthetic record; misplaced build | **pass** — patched: no page errors, fix active, no banner; misplaced: banner shown, engine untouched; re-patch refused |
 | Not tested | A live IndexedDB containing your real records; Edge/Chrome versions inside your Horizon image; whether F12 is available there |
 
 The end-to-end run caught a defect the unit tests could not: V116 freezes the engine object, so the first version of this patch silently failed to apply. The patch now replaces the frozen object at load time, before the SIRT module captures it, and the placement banner exists because of that finding.
+
+## Revision note
+
+2026-10-02 (before adoption): the repair originally only blanked fabricated values. It now restores the correct value, which may be non-blank. The first version would have missed the most common case: a false "Clinically significant variance" on complete records awaiting post-treatment imaging. Found while testing v116.17.
 
 ## Related finding (not fixed here)
 
